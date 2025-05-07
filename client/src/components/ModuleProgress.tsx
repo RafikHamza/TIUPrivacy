@@ -1,28 +1,52 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { Link } from "wouter";
 import { CheckIcon } from "lucide-react";
 import { Module, ModuleId } from "@/lib/types";
 import { allModules } from "@/data/modules";
+import { loadProgressSync, initialProgress } from "@/lib/storage";
 
 const ModuleProgress = () => {
-  const { progress } = useContext(AppContext);
+  const { progress, loading } = useContext(AppContext);
+  const [completedModulesCount, setCompletedModulesCount] = useState(0);
   const modules = allModules.sort((a, b) => a.order - b.order);
-  
-  const completedModulesCount = Object.values(progress.modules).filter(m => m.completed).length;
   const totalModulesCount = modules.length;
+  
+  // Safely calculate completed modules count
+  useEffect(() => {
+    try {
+      // If progress modules is undefined, use the initial progress value
+      const progressData = progress.modules || initialProgress.modules;
+      const completedCount = Object.values(progressData)
+        .filter(m => m?.completed)
+        .length;
+      setCompletedModulesCount(completedCount);
+    } catch (error) {
+      console.error("Error calculating completed modules:", error);
+      setCompletedModulesCount(0);
+    }
+  }, [progress]);
 
   const getModuleStatus = (moduleId: ModuleId) => {
-    const moduleProgress = progress.modules[moduleId];
-    if (!moduleProgress) return "locked";
-    if (moduleProgress.completed) return "completed";
-    
-    // Check if previous module is completed or if this is the first module
-    const moduleIndex = modules.findIndex(m => m.id === moduleId);
-    if (moduleIndex === 0) return "available";
-    
-    const prevModuleId = modules[moduleIndex - 1].id;
-    return progress.modules[prevModuleId]?.completed ? "available" : "locked";
+    // Safely access modules with proper fallbacks
+    try {
+      const modulesData = progress?.modules || initialProgress.modules;
+      const moduleProgress = modulesData[moduleId];
+      
+      if (!moduleProgress) return "locked";
+      if (moduleProgress.completed) return "completed";
+      
+      // Check if previous module is completed or if this is the first module
+      const moduleIndex = modules.findIndex(m => m.id === moduleId);
+      if (moduleIndex === 0) return "available";
+      
+      const prevModuleId = modules[moduleIndex - 1].id;
+      return modulesData[prevModuleId]?.completed ? "available" : "locked";
+    } catch (error) {
+      console.error("Error determining module status:", error);
+      // First module is always available as fallback
+      return moduleId === "phishing" ? "available" : "locked";
+    }
   };
 
   return (
