@@ -115,7 +115,8 @@ export default function PhishingSimulator() {
     });
     
     if (isCorrect) {
-      setScore(score + 20);
+      // Increment by 1 point instead of 20 per instructor's request
+      setScore(score + 1);
     }
     
     // Show feedback
@@ -162,7 +163,7 @@ export default function PhishingSimulator() {
         <CardHeader>
           <CardTitle className="text-center">Phishing Simulation Complete!</CardTitle>
           <CardDescription className="text-center">
-            You scored {score} out of 100 points
+            You scored {score} out of {shuffledEmails.length} points
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -210,7 +211,7 @@ export default function PhishingSimulator() {
               Email {currentEmail + 1} of {shuffledEmails.length}
             </div>
             <div className="text-sm font-medium">
-              Score: {score}/100
+              Score: {score}/{shuffledEmails.length}
             </div>
           </div>
           <Progress value={(currentEmail / shuffledEmails.length) * 100} className="h-2" />

@@ -16,14 +16,14 @@ interface PasswordCriteria {
 }
 
 const passwordCriteria: PasswordCriteria[] = [
-  { regex: /.{8,}/, description: "At least 8 characters", points: 10 },
-  { regex: /[A-Z]/, description: "Contains uppercase letters", points: 10 },
-  { regex: /[a-z]/, description: "Contains lowercase letters", points: 10 },
-  { regex: /[0-9]/, description: "Contains numbers", points: 10 },
-  { regex: /[^A-Za-z0-9]/, description: "Contains special characters", points: 10 },
-  { regex: /.{12,}/, description: "At least 12 characters (extra secure)", points: 10 },
-  { regex: /^(?!.*(.)\1{2,}).*$/, description: "No repeating characters (aaa)", points: 10 },
-  { regex: /^(?!.*(password|123456|qwerty)).*$/i, description: "No common patterns", points: 10 },
+  { regex: /.{8,}/, description: "At least 8 characters", points: 1 },
+  { regex: /[A-Z]/, description: "Contains uppercase letters", points: 1 },
+  { regex: /[a-z]/, description: "Contains lowercase letters", points: 1 },
+  { regex: /[0-9]/, description: "Contains numbers", points: 1 },
+  { regex: /[^A-Za-z0-9]/, description: "Contains special characters", points: 1 },
+  { regex: /.{12,}/, description: "At least 12 characters (extra secure)", points: 1 },
+  { regex: /^(?!.*(.)\1{2,}).*$/, description: "No repeating characters (aaa)", points: 1 },
+  { regex: /^(?!.*(password|123456|qwerty)).*$/i, description: "No common patterns", points: 1 },
 ];
 
 // Common bad passwords for the guessing game
@@ -65,10 +65,13 @@ export default function PasswordStrengthGame() {
     setStrength(totalPoints);
   }, [password]);
 
-  // Get strength category label and color
+  // Get strength category label and color based on 8-point scale
   const getStrengthCategory = () => {
-    if (strength >= 70) return { label: "Strong", color: "bg-green-500" };
-    if (strength >= 40) return { label: "Medium", color: "bg-yellow-500" };
+    // Calculate percentage (8 points maximum)
+    const percentage = (strength / 8) * 100;
+    
+    if (percentage >= 70) return { label: "Strong", color: "bg-green-500" };
+    if (percentage >= 40) return { label: "Medium", color: "bg-yellow-500" };
     return { label: "Weak", color: "bg-red-500" };
   };
 
@@ -171,19 +174,19 @@ export default function PasswordStrengthGame() {
               
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium">Strength: {strength}%</span>
+                  <span className="text-sm font-medium">Strength: {Math.round((strength / 8) * 100)}%</span>
                   <Badge variant={
-                    strength >= 70 ? "default" : 
-                    strength >= 40 ? "outline" : "destructive"
+                    (strength / 8) * 100 >= 70 ? "default" : 
+                    (strength / 8) * 100 >= 40 ? "outline" : "destructive"
                   } className={
-                    strength >= 70 ? "bg-green-500 hover:bg-green-600 text-white" :
-                    strength >= 40 ? "bg-yellow-500 hover:bg-yellow-600 text-black border-yellow-500" : ""
+                    (strength / 8) * 100 >= 70 ? "bg-green-500 hover:bg-green-600 text-white" :
+                    (strength / 8) * 100 >= 40 ? "bg-yellow-500 hover:bg-yellow-600 text-black border-yellow-500" : ""
                   }>
                     {strengthCategory.label}
                   </Badge>
                 </div>
                 <Progress
-                  value={strength}
+                  value={(strength / 8) * 100}
                   className={`h-2 ${strengthCategory.color}`}
                 />
               </div>
