@@ -1,6 +1,6 @@
 import { Express, Request, Response } from "express";
 import { storage } from "./storage";
-import { createUserSchema, loginWithIdSchema } from "@shared/schema";
+import { createUserSchema, loginWithIdSchema, User } from "@shared/schema";
 
 export function setupAuthRoutes(app: Express) {
   // Register a new user
@@ -63,6 +63,9 @@ export function setupAuthRoutes(app: Express) {
         uniqueId: updatedUser.uniqueId,
         points: updatedUser.points,
         badges: updatedUser.badges,
+        isAdmin: updatedUser.isAdmin || false,
+        certificateIssued: updatedUser.certificateIssued || false,
+        certificateDate: updatedUser.certificateDate
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -119,6 +122,129 @@ export function setupAuthRoutes(app: Express) {
     } catch (error) {
       console.error("Error resetting progress:", error);
       res.status(500).json({ error: "Failed to reset progress" });
+    }
+  });
+  
+  // ADMIN API: Get all users (admin only)
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      // Verify admin status by checking the Authorization header
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).json({ error: "Authorization required" });
+      }
+      
+      // Get user ID from Authorization header
+      const userId = authHeader.split(' ')[1]; // Format: "Bearer <userId>"
+      const user = await storage.getUserByUniqueId(userId);
+      
+      // Check if user is admin
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      // Get all users
+      const allUsers = await storage.getAllUsers();
+      
+      // Map the users to only the data we want to expose
+      const sanitizedUsers = allUsers.map((user: User) => ({
+        id: user.id,
+        uniqueId: user.uniqueId,
+        displayName: user.displayName,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin,
+        points: user.points,
+        certificateIssued: user.certificateIssued || false,
+        certificateDate: user.certificateDate
+      }));
+      
+      res.status(200).json(sanitizedUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+  
+  // ADMIN API: Get all certificates (admin only)
+  app.get("/api/admin/certificates", async (req, res) => {
+    try {
+      // Verify admin status by checking the Authorization header
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).json({ error: "Authorization required" });
+      }
+      
+      // Get user ID from Authorization header
+      const userId = authHeader.split(' ')[1]; // Format: "Bearer <userId>"
+      const user = await storage.getUserByUniqueId(userId);
+      
+      // Check if user is admin
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      // Get users with certificates
+      const allUsers = await storage.getAllUsers();
+      const certificates = allUsers
+        .filter((user: User) => user.certificateIssued)
+        .map((user: User) => ({
+          uniqueId: user.uniqueId,
+          displayName: user.displayName,
+          certificateDate: user.certificateDate,
+          points: user.points
+        }));
+      
+      res.status(200).json(certificates);
+    } catch (error) {
+      console.error("Error fetching certificates:", error);
+      res.status(500).json({ error: "Failed to fetch certificates" });
+    }
+  });
+  
+  // ADMIN API: Issue certificate to a user
+  app.post("/api/admin/issue-certificate/:userId", async (req, res) => {
+    try {
+      // Verify admin status by checking the Authorization header
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).json({ error: "Authorization required" });
+      }
+      
+      // Get admin ID from Authorization header
+      const adminId = authHeader.split(' ')[1]; // Format: "Bearer <userId>"
+      const admin = await storage.getUserByUniqueId(adminId);
+      
+      // Check if user is admin
+      if (!admin?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      // Get user ID from params
+      const { userId } = req.params;
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+      
+      // Find user
+      const user = await storage.getUserByUniqueId(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Issue certificate
+      const updatedUser = await storage.issueCertificate(user.id);
+      
+      res.status(200).json({
+        message: "Certificate issued successfully",
+        user: {
+          uniqueId: updatedUser.uniqueId,
+          displayName: updatedUser.displayName,
+          certificateDate: updatedUser.certificateDate
+        }
+      });
+    } catch (error) {
+      console.error("Error issuing certificate:", error);
+      res.status(500).json({ error: "Failed to issue certificate" });
     }
   });
 }

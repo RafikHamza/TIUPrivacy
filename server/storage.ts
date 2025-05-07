@@ -12,6 +12,8 @@ export interface IStorage {
   getUserProgress(userId: string): Promise<UserProgress | undefined>;
   saveUserProgress(userId: string, progress: UserProgress): Promise<UserProgress>;
   resetUserProgress(userId: string): Promise<void>;
+  getAllUsers(): Promise<User[]>;
+  issueCertificate(userId: number): Promise<User>;
 }
 
 export class MemStorage implements IStorage {
@@ -23,6 +25,42 @@ export class MemStorage implements IStorage {
     this.users = new Map();
     this.progressData = new Map();
     this.currentId = 1;
+    
+    // Initialize with admin user if it doesn't exist
+    this.initializeAdminUser();
+  }
+  
+  private async initializeAdminUser() {
+    try {
+      // Check if admin user exists
+      const adminUser = await this.getUserByUniqueId("Rafik8819");
+      if (!adminUser) {
+        // Create admin user with ID Rafik8819
+        const salt = generateUniqueId(16);
+        const hashedId = hashId("Rafik8819", salt);
+        
+        const adminUser: User = {
+          id: this.currentId++,
+          uniqueId: "Rafik8819",
+          hashedId,
+          displayName: "Prof. HAMZA Rafik",
+          createdAt: new Date(),
+          lastLogin: new Date(),
+          points: 0,
+          completedModules: [],
+          badges: [],
+          progress: {},
+          isAdmin: true,
+          certificateIssued: false,
+          certificateDate: null
+        };
+        
+        this.users.set(adminUser.id, adminUser);
+        console.log("Admin user initialized with ID: Rafik8819");
+      }
+    } catch (error) {
+      console.error("Failed to initialize admin user:", error);
+    }
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -70,7 +108,10 @@ export class MemStorage implements IStorage {
       points: 0,
       completedModules: [],
       badges: [],
-      progress: {}
+      progress: {},
+      isAdmin: false,
+      certificateIssued: false,
+      certificateDate: null
     };
     
     this.users.set(id, user);
@@ -109,6 +150,26 @@ export class MemStorage implements IStorage {
   
   async resetUserProgress(userId: string): Promise<void> {
     this.progressData.delete(userId);
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+  
+  async issueCertificate(userId: number): Promise<User> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    const updatedUser = {
+      ...user,
+      certificateIssued: true,
+      certificateDate: new Date()
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
   }
 }
 
