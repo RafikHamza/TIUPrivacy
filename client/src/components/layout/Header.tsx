@@ -27,7 +27,7 @@ const Header = () => {
   const navItems = [
     { name: "Home", href: "/" },
     { name: "Lessons", href: "/module/phishing" },
-    { name: "Games", href: "/games" },
+    { name: "Activities", href: "/activities" },
   ];
 
   const handleReset = () => {

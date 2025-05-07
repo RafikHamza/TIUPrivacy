@@ -8,7 +8,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import ModulePage from "@/pages/ModulePage";
 import FinalChallenge from "@/pages/FinalChallenge";
-import GamesPage from "@/pages/GamesPage";
+import ActivitiesPage from "@/pages/GamesPage"; // File still named GamesPage.tsx but component renamed
 import AuthPage from "@/pages/AuthPage";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -60,7 +60,7 @@ function AppRouter() {
           <ProtectedRoute>
             <Header />
             <div className="flex-grow">
-              <GamesPage />
+              <ActivitiesPage />
             </div>
             <Footer />
           </ProtectedRoute>
