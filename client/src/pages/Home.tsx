@@ -34,13 +34,34 @@ const Home = () => {
       <div className="mb-12">
         <div className="bg-gradient-to-r from-primary/20 to-accent/20 rounded-xl p-8 sm:p-12">
           <div className="max-w-3xl">
+            <span className="text-sm font-medium text-neutral-600 mb-2 block">Introduction to Digital Privacy and Data Security (SPRING)</span>
             <h1 className="text-4xl font-bold text-neutral-800 mb-4">
               Learn to Protect Yourself Online
             </h1>
-            <p className="text-lg text-neutral-700 mb-6">
+            <p className="text-lg text-neutral-700 mb-4">
               An interactive course on recognizing phishing attacks, safely using social media, 
               and understanding the risks of AI-powered chatbots.
             </p>
+            <div className="bg-white/80 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-2 mb-3">
+                <i className="ri-user-line mt-1 text-primary"></i>
+                <div>
+                  <span className="font-medium">Instructor:</span> Prof. HAMZA Rafik
+                </div>
+              </div>
+              <div className="flex items-start gap-2 mb-3">
+                <i className="ri-book-open-line mt-1 text-primary"></i>
+                <div>
+                  <span className="font-medium">Course Description:</span> This course focuses on three key areas: (1) cybersecurity basics, (2) digital privacy, and (3) data security. It provides an overview of cybersecurity, highlights the fundamentals of protecting personal information, and explores the challenges of digital business applications.
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <i className="ri-target-line mt-1 text-primary"></i>
+                <div>
+                  <span className="font-medium">Objectives:</span> To understand the concepts of data privacy, digital footprints, and online security. To apply basic methods for securing personal information online, including encryption, authentication, and safe browsing practices.
+                </div>
+              </div>
+            </div>
             <div className="flex flex-wrap gap-4">
               <Button size="lg" asChild>
                 <Link href={`/module/${nextModule.id}`}>
