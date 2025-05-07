@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import ModulePage from "@/pages/ModulePage";
 import FinalChallenge from "@/pages/FinalChallenge";
+import GamesPage from "@/pages/GamesPage";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { AppProvider } from "@/context/AppContext";
@@ -26,6 +27,7 @@ function AppRouter() {
           <Route path="/" component={Home} />
           <Route path="/module/:id" component={ModulePage} />
           <Route path="/challenge" component={FinalChallenge} />
+          <Route path="/games" component={GamesPage} />
           <Route component={NotFound} />
         </Switch>
       </div>
