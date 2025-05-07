@@ -13,6 +13,9 @@ export const users = pgTable("users", {
   completedModules: jsonb("completed_modules").notNull().default([]),
   badges: jsonb("badges").notNull().default([]),
   progress: jsonb("progress").notNull().default({}),
+  isAdmin: boolean("is_admin").notNull().default(false), // Flag for admin users
+  certificateIssued: boolean("certificate_issued").notNull().default(false), // Track if certificate was issued
+  certificateDate: timestamp("certificate_date"), // Date when certificate was issued
 });
 
 // Schema for creating a new user (minimal data collection)

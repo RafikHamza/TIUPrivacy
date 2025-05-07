@@ -16,6 +16,9 @@ interface User {
   displayName: string;
   points: number;
   badges: string[];
+  isAdmin?: boolean;
+  certificateIssued?: boolean;
+  certificateDate?: string;
 }
 
 type AuthContextType = {
