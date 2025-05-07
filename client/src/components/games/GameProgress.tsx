@@ -103,16 +103,25 @@ export function useGameProgress() {
     return Math.round((totalScore / maxPossibleScore) * 100);
   };
   
+  // Check if user has completed all games and qualifies for certificate
+  const qualifiesForCertificate = () => {
+    const { phishingSimulator, passwordStrength, securityQuiz } = gameProgress.highScores;
+    // Check if all three games have been played and have a score
+    return phishingSimulator > 0 && passwordStrength > 0 && securityQuiz > 0;
+  };
+  
   return {
     gameProgress,
     updateGameScore,
-    getOverallProgress
+    getOverallProgress,
+    qualifiesForCertificate
   };
 }
 
 export function GameProgressDisplay() {
-  const { gameProgress, getOverallProgress } = useGameProgress();
+  const { gameProgress, getOverallProgress, qualifiesForCertificate } = useGameProgress();
   const { user } = useAuth();
+  const [certificateDialog, setCertificateDialog] = useState(false);
   
   if (!user) {
     return (
@@ -128,6 +137,7 @@ export function GameProgressDisplay() {
   }
   
   const overallProgress = getOverallProgress();
+  const hasCompletedAll = qualifiesForCertificate();
   const { phishingSimulator, passwordStrength, securityQuiz } = gameProgress.highScores;
   
   return (

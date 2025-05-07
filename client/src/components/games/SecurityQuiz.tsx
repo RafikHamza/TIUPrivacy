@@ -159,6 +159,14 @@ export default function SecurityQuiz() {
     setQuestions(shuffled);
     setLoading(false);
   }, []);
+  
+  // Update game progress when results are shown
+  useEffect(() => {
+    if (showResult) {
+      const percentage = Math.round((score / questions.length) * 100);
+      updateGameScore('securityQuiz', percentage);
+    }
+  }, [showResult, score, questions.length, updateGameScore]);
 
   const handleOptionSelect = (index: number) => {
     if (isAnswered) return;
@@ -218,14 +226,6 @@ export default function SecurityQuiz() {
       </div>
     );
   }
-
-  // Update game progress when results are shown
-  useEffect(() => {
-    if (showResult) {
-      const percentage = Math.round((score / questions.length) * 100);
-      updateGameScore('securityQuiz', percentage);
-    }
-  }, [showResult, score, questions.length, updateGameScore]);
 
   if (showResult) {
     const percentage = Math.round((score / questions.length) * 100);
