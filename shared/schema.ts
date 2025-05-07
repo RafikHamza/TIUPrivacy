@@ -1,23 +1,33 @@
-import { pgTable, text, serial, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  uniqueId: text("unique_id").notNull().unique(), // Unique ID for user login
+  displayName: text("display_name").notNull(),
+  email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastLogin: timestamp("last_login").defaultNow().notNull(),
   points: integer("points").notNull().default(0),
   completedModules: jsonb("completed_modules").notNull().default([]),
   badges: jsonb("badges").notNull().default([]),
   progress: jsonb("progress").notNull().default({}),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+// Schema for creating a new user
+export const createUserSchema = createInsertSchema(users).pick({
+  displayName: true,
+  email: true,
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
+// Schema for logging in with just uniqueId
+export const loginWithIdSchema = z.object({
+  uniqueId: z.string().min(6, "ID must be at least 6 characters"),
+});
+
+export type CreateUser = z.infer<typeof createUserSchema>;
+export type LoginWithId = z.infer<typeof loginWithIdSchema>;
 export type User = typeof users.$inferSelect;
 
 export const progressSchema = z.object({
@@ -30,6 +40,7 @@ export const progressSchema = z.object({
   })),
   points: z.number().default(0),
   badges: z.array(z.string()).default([]),
+  userId: z.string().optional(), // Store userId to link progress with a user
 });
 
 export type UserProgress = z.infer<typeof progressSchema>;
