@@ -11,6 +11,7 @@ import FinalChallenge from "@/pages/FinalChallenge";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { AppProvider } from "@/context/AppContext";
+import { AuthProvider } from "@/hooks/use-auth";
 
 // Get the base URL from the environment or use the default
 // This is necessary for GitHub Pages deployment where the app is served from a subfolder
@@ -35,18 +36,18 @@ function AppRouter() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="light">
-        <TooltipProvider>
+    <ThemeProvider attribute="class" defaultTheme="light">
+      <TooltipProvider>
+        <AuthProvider>
           <AppProvider>
             <WouterRouter base={basePath}>
               <Toaster />
               <AppRouter />
             </WouterRouter>
           </AppProvider>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   );
 }
 

@@ -16,13 +16,13 @@ const queryClient = new QueryClient({
   },
 });
 
-createRoot(document.getElementById("root")!).render(
+// Create the app without auth for now - we'll add it directly in App.tsx
+// to avoid circular dependency problems
+const app = (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <AppProvider>
-        <App />
-        <Toaster />
-      </AppProvider>
-    </AuthProvider>
+    <App />
   </QueryClientProvider>
 );
+
+// Render the app
+createRoot(document.getElementById("root")!).render(app);
