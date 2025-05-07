@@ -1,20 +1,21 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link } from "wouter";
 import { AppContext } from "@/context/AppContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ModuleProgress from "@/components/ModuleProgress";
 import { allModules } from "@/data/modules";
-import { getCompletedModulesCount } from "@/lib/storage";
+import { loadProgressSync } from "@/lib/storage";
 import { CheckCircle, ArrowRight, ShieldCheck } from "lucide-react";
 
 const Home = () => {
   const { progress } = useContext(AppContext);
-  const completedModules = getCompletedModulesCount();
+  const [completedModulesCount, setCompletedModulesCount] = useState(0);
   const sortedModules = [...allModules].sort((a, b) => a.order - b.order);
   
   // Get next available module or return the first one if none are completed
   const getNextModule = () => {
+    // Use the progress from context which is already loaded
     for (const module of sortedModules) {
       if (!progress.modules[module.id]?.completed) {
         return module;
@@ -23,10 +24,19 @@ const Home = () => {
     return sortedModules[0]; // Default to first module if all completed
   };
   
+  // Calculate completed modules count
+  useEffect(() => {
+    // Use synchronous version for immediate UI rendering
+    const currentProgress = loadProgressSync();
+    const completedCount = Object.values(currentProgress.modules)
+      .filter(module => module.completed).length;
+    setCompletedModulesCount(completedCount);
+  }, [progress]); // Recalculate when progress changes
+  
   const nextModule = getNextModule();
   
   // Get completion percentage
-  const completionPercentage = (completedModules / sortedModules.length) * 100;
+  const completionPercentage = (completedModulesCount / sortedModules.length) * 100;
   
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -68,7 +78,7 @@ const Home = () => {
                   Start Learning <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              {completedModules > 0 && (
+              {completedModulesCount > 0 && (
                 <Button variant="outline" size="lg" asChild>
                   <Link href="/challenge">
                     Final Challenge <ShieldCheck className="ml-2 h-4 w-4" />
@@ -166,14 +176,14 @@ const Home = () => {
                 <Button 
                   className="w-full md:w-auto" 
                   variant="default"
-                  disabled={completedModules < 1}
+                  disabled={completedModulesCount < 1}
                   asChild
                 >
                   <Link href="/challenge">
                     Start Final Challenge
                   </Link>
                 </Button>
-                {completedModules < 1 && (
+                {completedModulesCount < 1 && (
                   <p className="text-sm text-neutral-500 mt-2">
                     Complete at least one module to unlock the final challenge
                   </p>
