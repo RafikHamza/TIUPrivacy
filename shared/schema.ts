@@ -18,6 +18,7 @@ export const users = pgTable("users", {
 // Schema for creating a new user (minimal data collection)
 export const createUserSchema = z.object({
   displayName: z.string().min(2, "Display name must be at least 2 characters"),
+  uniqueId: z.string().min(6, "ID must be at least 6 characters").max(20, "ID must not exceed 20 characters"),
 });
 
 // Schema for logging in with just uniqueId

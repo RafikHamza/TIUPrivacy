@@ -46,8 +46,14 @@ export class MemStorage implements IStorage {
   async createUser(userData: CreateUser): Promise<{ user: User; plainUniqueId: string }> {
     const id = this.currentId++;
     
-    // Generate a unique ID (10 characters) that will be shown to the user once
-    const plainUniqueId = generateUniqueId(10);
+    // Use the user-provided unique ID
+    const plainUniqueId = userData.uniqueId;
+    
+    // Check if the unique ID is already in use
+    const existingUser = await this.getUserByUniqueId(plainUniqueId);
+    if (existingUser) {
+      throw new Error("This ID is already in use. Please choose a different one.");
+    }
     
     // Store only the hashed version of the unique ID
     const hashedId = hashId(plainUniqueId, generateUniqueId(16));
@@ -56,7 +62,7 @@ export class MemStorage implements IStorage {
     
     const user: User = {
       id,
-      uniqueId: plainUniqueId, // We actually store this to make debugging easier, in production we might not
+      uniqueId: plainUniqueId, 
       hashedId, // This is what's actually used for verification
       displayName: userData.displayName,
       createdAt: now,
@@ -69,7 +75,7 @@ export class MemStorage implements IStorage {
     
     this.users.set(id, user);
     
-    // Return both the user object and the plain unique ID (which should be shown to the user once)
+    // Return both the user object and the plain unique ID
     return { user, plainUniqueId };
   }
 
