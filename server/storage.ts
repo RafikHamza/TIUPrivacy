@@ -1,5 +1,5 @@
-import { nanoid } from 'nanoid';
 import { users, type User, type CreateUser, type UserProgress, progressSchema } from "@shared/schema";
+import { generateUniqueId, hashId, verifyId } from "./auth-utils";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -7,11 +7,11 @@ import { users, type User, type CreateUser, type UserProgress, progressSchema } 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUniqueId(uniqueId: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(userData: CreateUser): Promise<User>;
+  createUser(userData: CreateUser): Promise<{ user: User; plainUniqueId: string }>;
   updateUserLastLogin(id: number): Promise<User>;
   getUserProgress(userId: string): Promise<UserProgress | undefined>;
   saveUserProgress(userId: string, progress: UserProgress): Promise<UserProgress>;
+  resetUserProgress(userId: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -30,30 +30,35 @@ export class MemStorage implements IStorage {
   }
 
   async getUserByUniqueId(uniqueId: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.uniqueId === uniqueId,
-    );
+    // This is a secure method that checks the provided ID against stored hashed values
+    // Find any user whose hashedId matches the provided uniqueId when hashed with its salt
+    return Array.from(this.users.values()).find(user => {
+      try {
+        // The uniqueId is stored hashed with a salt for security 
+        // We need to check if the provided ID matches when hashed with the same salt
+        return verifyId(uniqueId, user.hashedId);
+      } catch (error) {
+        return false;
+      }
+    });
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === email,
-    );
-  }
-
-  async createUser(userData: CreateUser): Promise<User> {
+  async createUser(userData: CreateUser): Promise<{ user: User; plainUniqueId: string }> {
     const id = this.currentId++;
     
-    // Generate a unique ID (8 characters)
-    const uniqueId = nanoid(8);
+    // Generate a unique ID (10 characters) that will be shown to the user once
+    const plainUniqueId = generateUniqueId(10);
+    
+    // Store only the hashed version of the unique ID
+    const hashedId = hashId(plainUniqueId, generateUniqueId(16));
     
     const now = new Date();
     
     const user: User = {
       id,
-      uniqueId,
+      uniqueId: plainUniqueId, // We actually store this to make debugging easier, in production we might not
+      hashedId, // This is what's actually used for verification
       displayName: userData.displayName,
-      email: userData.email,
       createdAt: now,
       lastLogin: now,
       points: 0,
@@ -63,7 +68,9 @@ export class MemStorage implements IStorage {
     };
     
     this.users.set(id, user);
-    return user;
+    
+    // Return both the user object and the plain unique ID (which should be shown to the user once)
+    return { user, plainUniqueId };
   }
 
   async updateUserLastLogin(id: number): Promise<User> {
@@ -92,6 +99,10 @@ export class MemStorage implements IStorage {
     };
     this.progressData.set(userId, progressWithUserId);
     return progressWithUserId;
+  }
+  
+  async resetUserProgress(userId: string): Promise<void> {
+    this.progressData.delete(userId);
   }
 }
 

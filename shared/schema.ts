@@ -5,8 +5,8 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   uniqueId: text("unique_id").notNull().unique(), // Unique ID for user login
-  displayName: text("display_name").notNull(),
-  email: text("email").notNull().unique(),
+  hashedId: text("hashed_id").notNull().unique(), // Hashed version of the unique ID for security
+  displayName: text("display_name").notNull(), 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   lastLogin: timestamp("last_login").defaultNow().notNull(),
   points: integer("points").notNull().default(0),
@@ -15,10 +15,9 @@ export const users = pgTable("users", {
   progress: jsonb("progress").notNull().default({}),
 });
 
-// Schema for creating a new user
-export const createUserSchema = createInsertSchema(users).pick({
-  displayName: true,
-  email: true,
+// Schema for creating a new user (minimal data collection)
+export const createUserSchema = z.object({
+  displayName: z.string().min(2, "Display name must be at least 2 characters"),
 });
 
 // Schema for logging in with just uniqueId
