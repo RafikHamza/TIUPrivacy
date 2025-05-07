@@ -219,8 +219,16 @@ export default function SecurityQuiz() {
     );
   }
 
+  // Update game progress when results are shown
+  useEffect(() => {
+    if (showResult) {
+      const percentage = Math.round((score / questions.length) * 100);
+      updateGameScore('securityQuiz', percentage);
+    }
+  }, [showResult, score, questions.length, updateGameScore]);
+
   if (showResult) {
-    const percentage = (score / questions.length) * 100;
+    const percentage = Math.round((score / questions.length) * 100);
     return (
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>

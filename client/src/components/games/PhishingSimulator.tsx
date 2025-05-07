@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, CheckCircle, XCircle, Mail, Shield, Award } from 'lucide-react';
+import { useGameProgress } from './GameProgress';
 
 // Sample phishing emails
 const phishingExamples = [
@@ -88,6 +89,14 @@ export default function PhishingSimulator() {
     explanation: ''
   });
   const [shuffledEmails, setShuffledEmails] = useState<typeof phishingExamples>([]);
+  const { updateGameScore } = useGameProgress();
+
+  // Update game progress when complete
+  useEffect(() => {
+    if (gameComplete) {
+      updateGameScore('phishingSimulator', score);
+    }
+  }, [gameComplete, score, updateGameScore]);
 
   // Shuffle emails at start
   useEffect(() => {
