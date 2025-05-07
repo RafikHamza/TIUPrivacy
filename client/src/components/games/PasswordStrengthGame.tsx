@@ -264,7 +264,7 @@ export default function PasswordStrengthGame() {
                 
                 {gameResult === "won" && (
                   <Alert className="mb-4 border-green-500 bg-green-50 text-green-800">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertTitle>You guessed correctly!</AlertTitle>
                     <AlertDescription>
                       The password was "{gamePassword}". This demonstrates why using common passwords is dangerous.
