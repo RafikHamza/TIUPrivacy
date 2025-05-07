@@ -3,6 +3,7 @@ import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { Button } from "@/components/ui/button";
 import { Menu, RotateCcw } from "lucide-react";
+import { UserProfileMenu } from "@/components/auth/UserProfileMenu";
 import {
   Sheet,
   SheetContent,

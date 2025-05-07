@@ -47,6 +47,7 @@ export const initialProgress: UserProgress = {
   },
   points: 0,
   badges: [],
+  userId: undefined, // Will be set when a user logs in
 };
 
 // Storage key for localStorage fallback
