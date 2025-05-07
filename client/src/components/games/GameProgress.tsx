@@ -5,13 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { TrendingUp, Award, Brain, User, ShieldCheck, Download, Share2 } from 'lucide-react';
+import { TrendingUp, Award, Brain, User, ShieldCheck, Download, Share2, Briefcase, Building } from 'lucide-react';
 
 // Define types for game progress
 interface GameScore {
   phishingSimulator: number;
   passwordStrength: number;
   securityQuiz: number;
+  workplaceSecurity: number;
+  businessPrivacy: number;
 }
 
 interface GameProgress {
@@ -27,6 +29,8 @@ const initialGameProgress: GameProgress = {
     phishingSimulator: 0,
     passwordStrength: 0,
     securityQuiz: 0,
+    workplaceSecurity: 0,
+    businessPrivacy: 0,
   },
   completedGames: [],
   lastPlayed: {},
@@ -34,6 +38,8 @@ const initialGameProgress: GameProgress = {
     phishingSimulator: 0,
     passwordStrength: 0,
     securityQuiz: 0,
+    workplaceSecurity: 0,
+    businessPrivacy: 0,
   }
 };
 
@@ -99,17 +105,18 @@ export function useGameProgress() {
   
   // Function to get the overall progress percentage
   const getOverallProgress = () => {
-    const { phishingSimulator, passwordStrength, securityQuiz } = gameProgress.highScores;
-    const totalScore = phishingSimulator + passwordStrength + securityQuiz;
-    const maxPossibleScore = 300; // Assuming each game has a max score of 100
+    const { phishingSimulator, passwordStrength, securityQuiz, workplaceSecurity, businessPrivacy } = gameProgress.highScores;
+    const totalScore = phishingSimulator + passwordStrength + securityQuiz + workplaceSecurity + businessPrivacy;
+    const maxPossibleScore = 500; // Assuming each activity has a max score of 100
     return Math.round((totalScore / maxPossibleScore) * 100);
   };
   
   // Check if user has completed all games and qualifies for certificate
   const qualifiesForCertificate = () => {
-    const { phishingSimulator, passwordStrength, securityQuiz } = gameProgress.highScores;
-    // Check if all three games have been played and have a score
-    return phishingSimulator > 0 && passwordStrength > 0 && securityQuiz > 0;
+    const { phishingSimulator, passwordStrength, securityQuiz, workplaceSecurity, businessPrivacy } = gameProgress.highScores;
+    // Check if all five activities have been played and have a score
+    return phishingSimulator > 0 && passwordStrength > 0 && securityQuiz > 0 && 
+           workplaceSecurity > 0 && businessPrivacy > 0;
   };
   
   return {
@@ -129,9 +136,9 @@ export function GameProgressDisplay() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Game Progress</CardTitle>
+          <CardTitle>Activity Progress</CardTitle>
           <CardDescription>
-            Log in to track your progress across cybersecurity games.
+            Log in to track your progress across cybersecurity activities.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -140,7 +147,7 @@ export function GameProgressDisplay() {
   
   const overallProgress = getOverallProgress();
   const hasCompletedAll = qualifiesForCertificate();
-  const { phishingSimulator, passwordStrength, securityQuiz } = gameProgress.highScores;
+  const { phishingSimulator, passwordStrength, securityQuiz, workplaceSecurity, businessPrivacy } = gameProgress.highScores;
   
   // Function to update record in the backend that user has completed training
   const recordCompletion = async () => {
@@ -159,6 +166,8 @@ export function GameProgressDisplay() {
               phishingSimulator,
               passwordStrength,
               securityQuiz,
+              workplaceSecurity,
+              businessPrivacy,
               overall: overallProgress
             }
           })
@@ -228,6 +237,26 @@ export function GameProgressDisplay() {
                 {securityQuiz > 0 ? `${securityQuiz}%` : 'Not played'}
               </Badge>
             </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-amber-500" />
+                <span className="text-sm font-medium">Workplace Security</span>
+              </div>
+              <Badge variant={workplaceSecurity > 0 ? "default" : "outline"} className="bg-amber-500 hover:bg-amber-600">
+                {workplaceSecurity > 0 ? `${workplaceSecurity}%` : 'Not played'}
+              </Badge>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Building className="h-4 w-4 text-cyan-500" />
+                <span className="text-sm font-medium">Digital Business</span>
+              </div>
+              <Badge variant={businessPrivacy > 0 ? "default" : "outline"} className="bg-cyan-500 hover:bg-cyan-600">
+                {businessPrivacy > 0 ? `${businessPrivacy}%` : 'Not played'}
+              </Badge>
+            </div>
           </div>
           
           <div className="pt-2 border-t mt-4">
@@ -270,8 +299,8 @@ export function GameProgressDisplay() {
                 <h3 className="text-3xl font-bold mt-2 text-primary">{user.displayName}</h3>
                 <p className="mt-4">For successfully completing the cybersecurity awareness training</p>
                 <p className="mt-2 text-muted-foreground">
-                  Demonstrating competence in recognizing phishing attacks and the 
-                  safe use of social media and AI-powered chatbots
+                  Demonstrating competence in recognizing phishing attacks, workplace security practices,
+                  digital business privacy considerations, and the safe use of social media and AI-powered chatbots
                 </p>
               </div>
               
