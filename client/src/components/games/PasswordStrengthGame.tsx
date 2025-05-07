@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CheckCircle, XCircle, Info, Key, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useGameProgress } from './GameProgress';
 
 interface PasswordCriteria {
   regex: RegExp;
@@ -43,6 +44,7 @@ export default function PasswordStrengthGame() {
   const [gameGuess, setGameGuess] = useState("");
   const [gameResult, setGameResult] = useState<"playing" | "won" | "lost">("playing");
   const [hints, setHints] = useState<string[]>([]);
+  const { updateGameScore } = useGameProgress();
 
   // Initialize a random password for the guessing game
   useEffect(() => {
@@ -69,6 +71,16 @@ export default function PasswordStrengthGame() {
     if (strength >= 40) return { label: "Medium", color: "bg-yellow-500" };
     return { label: "Weak", color: "bg-red-500" };
   };
+
+  // Track game results when won
+  useEffect(() => {
+    if (gameResult === "won") {
+      const score = 100 - (guessAttempts * 20); // 100 for first try, 80 for second, etc.
+      updateGameScore('passwordStrength', score);
+    } else if (gameResult === "lost") {
+      updateGameScore('passwordStrength', 0); // 0 points if lost
+    }
+  }, [gameResult, guessAttempts, updateGameScore]);
 
   // Handle password guessing game submit
   const handleGuessSubmit = (e: React.FormEvent) => {
