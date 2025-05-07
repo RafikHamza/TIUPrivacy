@@ -17,9 +17,11 @@ const loginFormSchema = z.object({
   uniqueId: z.string().min(6, "Unique ID must be at least 6 characters")
 });
 
-// Registration form schema (just display name)
+// Registration form schema (display name and user-selected ID)
 const registerFormSchema = z.object({
-  displayName: z.string().min(2, "Display name must be at least 2 characters")
+  displayName: z.string().min(2, "Display name must be at least 2 characters"),
+  uniqueId: z.string().min(6, "ID must be at least 6 characters").max(20, "ID must not exceed 20 characters")
+    .regex(/^[a-zA-Z0-9_-]+$/, "ID can only contain letters, numbers, underscores, and hyphens")
 });
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
@@ -43,6 +45,7 @@ export function AuthModal() {
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
       displayName: '',
+      uniqueId: '',
     },
   });
 
@@ -154,6 +157,22 @@ export function AuthModal() {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={registerForm.control}
+                      name="uniqueId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Choose Your Unique ID</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Create a unique ID to use for login" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Use at least 6 characters. Only letters, numbers, underscores, and hyphens allowed.
+                          </p>
+                        </FormItem>
+                      )}
+                    />
                     <Button 
                       type="submit" 
                       className="w-full" 
@@ -172,7 +191,7 @@ export function AuthModal() {
                 </Form>
               </CardContent>
               <CardFooter className="text-xs text-muted-foreground">
-                We collect minimal data. You'll receive a unique ID - save it carefully as it's your only way to log back in.
+                We collect minimal data. Remember your chosen ID carefully as it's your only way to log back in.
               </CardFooter>
             </Card>
           </TabsContent>

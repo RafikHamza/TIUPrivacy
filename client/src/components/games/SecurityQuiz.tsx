@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Award, BookOpen, CheckCircle, XCircle, ArrowLeft, ArrowRight, Loader2, RefreshCcw } from 'lucide-react';
+import { useGameProgress } from './GameProgress';
 
 // Define quiz question type
 interface QuizQuestion {
@@ -150,6 +151,7 @@ export default function SecurityQuiz() {
   const [showResult, setShowResult] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { updateGameScore } = useGameProgress();
 
   // Initialize quiz with shuffled questions
   useEffect(() => {

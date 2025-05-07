@@ -18,10 +18,9 @@ export function setupAuthRoutes(app: Express) {
       // Create the user with minimal data
       const { user, plainUniqueId } = await storage.createUser(parsedData.data);
 
-      // Send back success response with unique ID (this is the ONLY time they'll see it!)
+      // Send back success response with the user data
       res.status(201).json({
-        message: "User created successfully. Save your unique ID - you'll need it to log in!",
-        uniqueId: plainUniqueId,
+        message: "User created successfully with your chosen ID.",
         user: {
           displayName: user.displayName,
           id: user.id,

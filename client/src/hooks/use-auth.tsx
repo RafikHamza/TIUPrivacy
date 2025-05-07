@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (data) => {
       toast({
         title: "Registration successful",
-        description: `Your unique ID is: ${data.uniqueId}. Please save this ID to login later.`,
+        description: `Account created successfully with ID: ${data.user.uniqueId}. You can now log in.`,
       });
     },
     onError: (error: Error) => {
