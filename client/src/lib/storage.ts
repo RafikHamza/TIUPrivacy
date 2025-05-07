@@ -1,4 +1,10 @@
 import { UserProgress, progressSchema } from "@shared/schema";
+import { 
+  saveProgressToIndexedDB, 
+  loadProgressFromIndexedDB, 
+  resetProgressInIndexedDB,
+  isIndexedDBAvailable
+} from "./indexedDBStorage";
 
 // Default progress state
 export const initialProgress: UserProgress = {
@@ -43,22 +49,58 @@ export const initialProgress: UserProgress = {
   badges: [],
 };
 
-// Storage key
+// Storage key for localStorage fallback
 const PROGRESS_STORAGE_KEY = 'cybersafe-learning-progress';
 
-// Save progress to localStorage
-export const saveProgress = (progress: UserProgress): void => {
+// Check if we can use IndexedDB
+const canUseIndexedDB = typeof window !== 'undefined' && isIndexedDBAvailable();
+
+// Save progress
+export const saveProgress = async (progress: UserProgress): Promise<void> => {
   try {
     const validatedProgress = progressSchema.parse(progress);
-    localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(validatedProgress));
+    
+    if (canUseIndexedDB) {
+      // Use IndexedDB
+      await saveProgressToIndexedDB(validatedProgress);
+    } else {
+      // Fallback to localStorage
+      localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(validatedProgress));
+    }
   } catch (error) {
     console.error('Failed to save progress:', error);
   }
 };
 
-// Load progress from localStorage
-export const loadProgress = (): UserProgress => {
+// Load progress
+export const loadProgress = async (): Promise<UserProgress> => {
   try {
+    if (canUseIndexedDB) {
+      // Use IndexedDB
+      const progress = await loadProgressFromIndexedDB();
+      return progressSchema.parse(progress);
+    } else {
+      // Fallback to localStorage
+      const storedData = localStorage.getItem(PROGRESS_STORAGE_KEY);
+      
+      if (!storedData) {
+        return initialProgress;
+      }
+      
+      const parsedData = JSON.parse(storedData);
+      return progressSchema.parse(parsedData);
+    }
+  } catch (error) {
+    console.error('Failed to load progress, starting fresh:', error);
+    return initialProgress;
+  }
+};
+
+// For synchronous operations that need immediate access to progress
+// This should be used only when absolutely necessary
+export const loadProgressSync = (): UserProgress => {
+  try {
+    // We can only use localStorage for sync operations
     const storedData = localStorage.getItem(PROGRESS_STORAGE_KEY);
     
     if (!storedData) {
@@ -68,17 +110,17 @@ export const loadProgress = (): UserProgress => {
     const parsedData = JSON.parse(storedData);
     return progressSchema.parse(parsedData);
   } catch (error) {
-    console.error('Failed to load progress, starting fresh:', error);
+    console.error('Failed to load progress synchronously, starting fresh:', error);
     return initialProgress;
   }
 };
 
 // Update a specific module's progress
-export const updateModuleProgress = (
+export const updateModuleProgress = async (
   moduleId: string,
   updateFn: (currentModuleProgress: UserProgress['modules'][string]) => UserProgress['modules'][string]
-): UserProgress => {
-  const currentProgress = loadProgress();
+): Promise<UserProgress> => {
+  const currentProgress = await loadProgress();
   
   const updatedProgress = {
     ...currentProgress,
@@ -93,26 +135,26 @@ export const updateModuleProgress = (
     },
   };
   
-  saveProgress(updatedProgress);
+  await saveProgress(updatedProgress);
   return updatedProgress;
 };
 
 // Add points to user's progress
-export const addPoints = (points: number): UserProgress => {
-  const currentProgress = loadProgress();
+export const addPoints = async (points: number): Promise<UserProgress> => {
+  const currentProgress = await loadProgress();
   
   const updatedProgress = {
     ...currentProgress,
     points: currentProgress.points + points,
   };
   
-  saveProgress(updatedProgress);
+  await saveProgress(updatedProgress);
   return updatedProgress;
 };
 
 // Award a badge
-export const awardBadge = (badgeId: string): UserProgress => {
-  const currentProgress = loadProgress();
+export const awardBadge = async (badgeId: string): Promise<UserProgress> => {
+  const currentProgress = await loadProgress();
   
   // Check if user already has this badge
   if (currentProgress.badges.includes(badgeId)) {
@@ -124,23 +166,26 @@ export const awardBadge = (badgeId: string): UserProgress => {
     badges: [...currentProgress.badges, badgeId],
   };
   
-  saveProgress(updatedProgress);
+  await saveProgress(updatedProgress);
   return updatedProgress;
 };
 
 // Get completed modules count
-export const getCompletedModulesCount = (): number => {
-  const currentProgress = loadProgress();
+export const getCompletedModulesCount = async (): Promise<number> => {
+  const currentProgress = await loadProgress();
   return Object.values(currentProgress.modules).filter(module => module.completed).length;
 };
 
 // Get total modules count
-export const getTotalModulesCount = (): number => {
-  const currentProgress = loadProgress();
+export const getTotalModulesCount = async (): Promise<number> => {
+  const currentProgress = await loadProgress();
   return Object.keys(currentProgress.modules).length;
 };
 
 // Reset all progress (for testing)
-export const resetProgress = (): void => {
+export const resetProgress = async (): Promise<void> => {
+  if (canUseIndexedDB) {
+    await resetProgressInIndexedDB();
+  }
   localStorage.removeItem(PROGRESS_STORAGE_KEY);
 };
