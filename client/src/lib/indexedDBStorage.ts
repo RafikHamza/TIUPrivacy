@@ -129,3 +129,8 @@ export const resetProgressInIndexedDB = async (): Promise<void> => {
 export const isIndexedDBAvailable = (): boolean => {
   return !!window.indexedDB;
 };
+
+// Wait until a promise is resolved to avoid race conditions
+export function waitForPromise<T>(promise: Promise<T>): Promise<T> {
+  return promise;
+}

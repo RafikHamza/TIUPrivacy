@@ -9,7 +9,7 @@ import QuizSection from "@/components/QuizSection";
 import InteractiveChallenge from "@/components/InteractiveChallenge";
 import ModuleCompletion from "@/components/ModuleCompletion";
 import { allModules } from "@/data/modules";
-import { updateModuleProgress } from "@/lib/storage";
+import { updateModuleProgress, initialProgress } from "@/lib/storage";
 import { getBadgeById } from "@/data/badges";
 import { Clock, Award } from "lucide-react";
 
@@ -34,24 +34,32 @@ const ModulePage = () => {
     
     // Determine which stage to show based on progress
     if (module) {
-      const moduleProgress = progress.modules[module.id as ModuleId];
-      
-      // If module is already completed, start from slides
-      if (moduleProgress?.completed) {
+      try {
+        // Safely access progress with fallback to initial state
+        const modulesData = progress?.modules || initialProgress.modules;
+        const moduleProgress = modulesData[module.id as ModuleId];
+        
+        // If module is already completed, start from slides
+        if (moduleProgress?.completed) {
+          setStage("slides");
+          return;
+        }
+        
+        // Check how far the user has gotten
+        const hasCompletedSlides = Object.keys(moduleProgress?.slides || {}).length === module.slides.length;
+        const hasCompletedQuizzes = Object.keys(moduleProgress?.quizzes || {}).length === module.quizzes.length;
+        
+        if (!hasCompletedSlides) {
+          setStage("slides");
+        } else if (!hasCompletedQuizzes) {
+          setStage("quiz");
+        } else {
+          setStage("challenge");
+        }
+      } catch (error) {
+        console.error("Error determining module stage:", error);
+        // Default to slides as the first stage
         setStage("slides");
-        return;
-      }
-      
-      // Check how far the user has gotten
-      const hasCompletedSlides = Object.keys(moduleProgress?.slides || {}).length === module.slides.length;
-      const hasCompletedQuizzes = Object.keys(moduleProgress?.quizzes || {}).length === module.quizzes.length;
-      
-      if (!hasCompletedSlides) {
-        setStage("slides");
-      } else if (!hasCompletedQuizzes) {
-        setStage("quiz");
-      } else {
-        setStage("challenge");
       }
     }
   }, [id, progress, setLocation]);
@@ -65,41 +73,58 @@ const ModulePage = () => {
       return acc;
     }, {} as Record<string, boolean>);
     
-    const updatedProgress = updateModuleProgress(currentModule.id as ModuleId, (moduleProgress) => {
+    // Fire and forget
+    updateModuleProgress(currentModule.id as ModuleId, (moduleProgress) => {
       return {
         ...moduleProgress,
         slides,
         lastVisited: new Date().toISOString()
       };
+    }).then(updatedProgress => {
+      setProgress(updatedProgress);
+    }).catch(error => {
+      console.error("Error saving slides progress:", error);
     });
     
-    setProgress(updatedProgress);
+    // Move to next stage regardless of save outcome
     setStage("quiz");
   };
   
   const handleQuizComplete = () => {
     if (!currentModule) return;
     
-    // Calculate quiz score contribution to total score
-    const quizPoints = Object.values(progress.modules[currentModule.id as ModuleId]?.quizzes || {}).reduce((sum, points) => sum + points, 0);
-    setScore(quizPoints);
-    
-    setStage("challenge");
+    try {
+      // Calculate quiz score contribution to total score
+      const modulesData = progress?.modules || initialProgress.modules;
+      const quizPoints = Object.values(modulesData[currentModule.id as ModuleId]?.quizzes || {})
+        .reduce((sum, points) => sum + points, 0);
+      setScore(quizPoints);
+      
+      setStage("challenge");
+    } catch (error) {
+      console.error("Error processing quiz completion:", error);
+      setScore(0);
+      setStage("challenge");
+    }
   };
   
   const handleChallengeComplete = () => {
     if (!currentModule) return;
     
-    // Mark module as completed
-    const updatedProgress = updateModuleProgress(currentModule.id as ModuleId, (moduleProgress) => {
+    // Mark module as completed - fire and forget
+    updateModuleProgress(currentModule.id as ModuleId, (moduleProgress) => {
       return {
         ...moduleProgress,
         completed: true,
         lastVisited: new Date().toISOString()
       };
+    }).then(updatedProgress => {
+      setProgress(updatedProgress);
+    }).catch(error => {
+      console.error("Error saving challenge completion:", error);
     });
     
-    setProgress(updatedProgress);
+    // Move to completion stage regardless of save outcome
     setStage("completion");
   };
   

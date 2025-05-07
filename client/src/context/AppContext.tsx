@@ -50,26 +50,28 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [storageAvailable, setStorageAvailable] = useState(true);
 
   // Function to reset progress state
-  const resetProgressState = async () => {
+  const resetProgressState = () => {
+    // Update state immediately
     setProgress(initialProgress);
+    
+    // Reset storage (fire and forget)
     if (storageAvailable) {
-      try {
-        await resetProgress();
-      } catch (error) {
+      resetProgress().catch(error => {
         console.error("Failed to reset progress:", error);
-      }
+      });
     }
   };
 
   // Custom progress setter that also saves to storage
-  const handleSetProgress = async (newProgress: UserProgress) => {
+  const handleSetProgress = (newProgress: UserProgress) => {
+    // Update the state immediately for UI responsiveness
     setProgress(newProgress);
+    
+    // Then save to storage without waiting (fire and forget)
     if (storageAvailable) {
-      try {
-        await saveProgress(newProgress);
-      } catch (error) {
+      saveProgress(newProgress).catch(error => {
         console.error("Failed to save progress:", error);
-      }
+      });
     }
   };
 
