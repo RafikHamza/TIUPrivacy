@@ -3,7 +3,7 @@ import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { Button } from "@/components/ui/button";
 import { Menu, RotateCcw } from "lucide-react";
-import { PlaceholderUserMenu } from "@/components/auth/PlaceholderUserMenu";
+import { UserProfileMenu } from "@/components/auth/UserProfileMenu";
 import {
   Sheet,
   SheetContent,
@@ -95,7 +95,7 @@ const Header = () => {
               </Dialog>
               
               {/* User Profile Menu */}
-              <PlaceholderUserMenu />
+              <UserProfileMenu />
             </div>
           </nav>
           
@@ -141,7 +141,7 @@ const Header = () => {
                   
                   {/* Mobile User Profile */}
                   <div className="px-3 py-2">
-                    <PlaceholderUserMenu />
+                    <UserProfileMenu />
                   </div>
                 </div>
               </SheetContent>
