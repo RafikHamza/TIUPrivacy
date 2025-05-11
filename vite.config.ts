@@ -24,8 +24,13 @@ export default defineConfig({
     },
   },
   root: path.resolve(import.meta.dirname, "client"),
+
+  // ---- ADD THE 'base' PROPERTY HERE ----
+  base: '/TIUPrivacy/',
+  // --------------------------------------
+
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path.resolve(import.meta.dirname, "dist/public"), // Your project outputs to 'dist/public'
     emptyOutDir: true,
   },
 });
