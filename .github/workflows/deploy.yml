@@ -3,11 +3,13 @@ name: Deploy to GitHub Pages
 # Triggers the workflow on push events to the main branch
 on:
   push:
-    branches: [ main ] # Or your default branch if it's not 'main' (e.g., master)
+    branches: [ main ] # Ensure this matches your default branch (e.g., main or master)
 
 # Sets permissions for the GitHub token to allow deployment to GitHub Pages
 permissions:
   contents: write # Allows the action to push to the gh-pages branch
+  pages: write    # Allows the action to deploy to GitHub Pages (if using GitHub Actions as source directly, good to have)
+  id-token: write # Required for certain deployment methods (good to have for future-proofing)
 
 jobs:
   build-and-deploy:
@@ -22,20 +24,29 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20' # Specifies Node.js version 20.x
-          cache: 'npm' # Enables caching for npm dependencies
+          cache: 'npm' # Enables caching for npm dependencies to speed up future builds
 
       - name: Install dependencies
-        # 'npm ci' is generally recommended for CI for faster, more reliable installs
-        # It uses package-lock.json and ensures a clean slate
+        # 'npm ci' is generally recommended for CI/CD for faster, more reliable installs.
+        # It uses your package-lock.json file and ensures a clean slate.
         run: npm ci 
 
       - name: Build application
-        # This runs the 'build' script defined in your package.json
+        # This runs the 'build' script defined in your package.json.
+        # Your vite.config.ts should ensure output goes to 'dist/public'.
         run: npm run build 
 
+      - name: Prepare 404 page for SPA fallback
+        # This copies your main index.html to 404.html. When GitHub Pages can't find a specific
+        # route, it will serve this 404.html. Since it's your app's index.html, your
+        # client-side router (wouter) can then handle the original route.
+        # This assumes your Vite build output is in 'dist/public'.
+        run: cp dist/public/index.html dist/public/404.html
+
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4 # Uses a popular action for deployment
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages # The branch the action should deploy to.
-          # This is the CRUCIAL part that needs to match your Vite build output directory:
-          folder: dist/public # Your vite.config.ts specifies outDir as 'dist/public'
+          # This folder contains the built website (including index.html and 404.html)
+          # It must match the 'outDir' from your vite.config.ts (which is 'dist/public').
+          folder: dist/public
