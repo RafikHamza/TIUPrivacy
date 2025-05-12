@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { AppContext } from "@/context/AppContext";
+import { useUtils } from "@/hooks/use-utils";
 import { Badge, ModuleId } from "@/lib/types";
 import { allBadges } from "@/data/badges";
 import { ChevronRight } from "lucide-react";
@@ -38,11 +39,13 @@ const ModuleCompletion = ({ moduleId, score }: ModuleCompletionProps) => {
     };
   });
 
+  const { createPath } = useUtils();
+  
   const handleContinue = () => {
     if (nextModule) {
-      setLocation(`/module/${nextModule.id}`);
+      setLocation(createPath(`/module/${nextModule.id}`));
     } else {
-      setLocation('/challenge');
+      setLocation(createPath('/challenge'));
     }
   };
 

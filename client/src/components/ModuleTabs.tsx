@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Module, ModuleId } from "@/lib/types";
 import { allModules } from "@/data/modules";
+import { useUtils } from "@/hooks/use-utils";
 
 interface ModuleTabsProps {
   activeModuleId: ModuleId;
@@ -26,8 +27,10 @@ const ModuleTabs = ({ activeModuleId }: ModuleTabsProps) => {
     setAvailableModules(modulesToShow);
   }, [activeModuleId]);
 
+  const { createPath } = useUtils();
+  
   const handleTabClick = (moduleId: ModuleId) => {
-    setLocation(`/module/${moduleId}`);
+    setLocation(createPath(`/module/${moduleId}`));
   };
 
   return (

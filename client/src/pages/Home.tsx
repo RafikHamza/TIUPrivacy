@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { Link } from "wouter";
 import { AppContext } from "@/context/AppContext";
+import { useUtils } from "@/hooks/use-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ModuleProgress from "@/components/ModuleProgress";
@@ -11,6 +12,7 @@ import { CheckCircle, ArrowRight, ShieldCheck } from "lucide-react";
 const Home = () => {
   const { progress } = useContext(AppContext);
   const [completedModulesCount, setCompletedModulesCount] = useState(0);
+  const { createPath } = useUtils();
   const sortedModules = [...allModules].sort((a, b) => a.order - b.order);
   
   // Get next available module or return the first one if none are completed
