@@ -20,11 +20,17 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 // This is necessary for GitHub Pages deployment where the app is served from a subfolder
 const basePath = import.meta.env.BASE_URL || '/';
 
+// Make sure all routes work with the base path
+const useBasePath = () => {
+  return (to: string) => basePath + to.replace(/^\//, '');
+};
+
 function AppRouter() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Switch>
-        <Route path="/auth" component={AuthPage} />
+    <WouterRouter base={basePath}>
+      <div className="flex flex-col min-h-screen">
+        <Switch>
+          <Route path="/auth" component={AuthPage} />
         
         <Route path="/">
           <ProtectedRoute>
