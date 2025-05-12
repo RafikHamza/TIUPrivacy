@@ -46,7 +46,6 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          branch: gh-pages # The branch the action should deploy to.
-          # This folder contains the built website (including index.html and 404.html)
+          branch: gh-pages # The branch the action should deploy to.          # This folder contains the built website (including index.html and 404.html)
           # It must match the 'outDir' from your vite.config.ts (which is 'dist/public').
           folder: dist/public
