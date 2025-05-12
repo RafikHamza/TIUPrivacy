@@ -28,15 +28,17 @@ jobs:
 
       - name: Install dependencies
         # 'npm ci' is generally recommended for CI/CD for faster, more reliable installs.
-        # It uses your package-lock.json file and ensures a clean slate.
-        run: npm ci      - name: Build application
+        # It uses your package-lock.json file and ensures a clean slate.        run: npm ci
+
+      - name: Build application
         # This runs the GitHub Pages specific build script
-        run: npm run build:gh-pages      - name: Prepare 404 page for SPA fallback
+        run: npm run build:gh-pages
+
+      - name: Prepare 404 page for SPA fallback
         # This copies your main index.html to 404.html for SPA routing
         run: cp dist/index.html dist/404.html
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages # The branch the action should deploy to.          # This folder contains the built website
-          folder: dist
+        with:          branch: gh-pages # The branch the action should deploy to.
+          folder: dist # This folder contains the built website
