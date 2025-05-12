@@ -1,6 +1,8 @@
 import { Link } from "wouter";
+import { useUtils } from "@/hooks/use-utils";
 
 const Footer = () => {
+  const { createPath } = useUtils();
   return (
     <footer className="bg-neutral-800 text-white py-8 mt-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -29,11 +31,11 @@ const Footer = () => {
           <div>
             <h3 className="font-medium text-lg mb-4">Learning Modules</h3>
             <ul className="space-y-2 text-neutral-400">
-              <li><Link href="/module/phishing"><a className="hover:text-white">Phishing Recognition</a></Link></li>
-              <li><Link href="/module/email"><a className="hover:text-white">Email Safety</a></Link></li>
-              <li><Link href="/module/social-media"><a className="hover:text-white">Social Media Security</a></Link></li>
-              <li><Link href="/module/ai-chatbots"><a className="hover:text-white">AI Chatbot Safety</a></Link></li>
-              <li><Link href="/challenge"><a className="hover:text-white">Final Challenge</a></Link></li>
+              <li><Link href={createPath("/module/phishing")}><a className="hover:text-white">Phishing Recognition</a></Link></li>
+              <li><Link href={createPath("/module/email")}><a className="hover:text-white">Email Safety</a></Link></li>
+              <li><Link href={createPath("/module/social-media")}><a className="hover:text-white">Social Media Security</a></Link></li>
+              <li><Link href={createPath("/module/ai-chatbots")}><a className="hover:text-white">AI Chatbot Safety</a></Link></li>
+              <li><Link href={createPath("/challenge")}><a className="hover:text-white">Final Challenge</a></Link></li>
             </ul>
           </div>
           

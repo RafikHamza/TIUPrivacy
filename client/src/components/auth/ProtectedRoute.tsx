@@ -2,6 +2,7 @@ import { ReactNode, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { useUtils } from '@/hooks/use-utils';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -26,7 +27,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       localStorage.setItem('redirectAfterLogin', location);
       
       // Redirect to auth page
-      setLocation('/auth');
+      const { createPath } = useUtils();
+      setLocation(createPath('/auth'));
     }
   }, [user, isLoading, setLocation, location, toast]);
 

@@ -96,3 +96,13 @@ export function isEmpty(value: any): boolean {
   if (typeof value === 'object') return Object.keys(value).length === 0;
   return false;
 }
+
+// Base path for GitHub Pages deployment
+export const getBasePath = () => {
+  return import.meta.env.BASE_URL || '/';
+};
+
+export const createPath = (path: string) => {
+  const basePath = getBasePath();
+  return `${basePath}${path.startsWith('/') ? path.slice(1) : path}`;
+};

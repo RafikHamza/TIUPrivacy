@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
+import { useUtils } from "@/hooks/use-utils";
 import { Button } from "@/components/ui/button";
 import { Menu, RotateCcw } from "lucide-react";
 import { UserProfileMenu } from "@/components/auth/UserProfileMenu";
@@ -24,10 +25,11 @@ const Header = () => {
   const { progress, resetProgressState } = useContext(AppContext);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
 
+  const { createPath } = useUtils();
   const navItems = [
-    { name: "Home", href: "/" },
-    { name: "Lessons", href: "/module/phishing" },
-    { name: "Activities", href: "/activities" },
+    { name: "Home", href: createPath("/") },
+    { name: "Lessons", href: createPath("/module/phishing") },
+    { name: "Activities", href: createPath("/activities") },
   ];
 
   const handleReset = () => {

@@ -15,24 +15,20 @@ import Footer from "@/components/layout/Footer";
 import { AppProvider } from "@/context/AppContext";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { useUtils } from '@/hooks/use-utils';
 
 // Get the base URL from the environment or use the default
 // This is necessary for GitHub Pages deployment where the app is served from a subfolder
 const basePath = import.meta.env.BASE_URL || '/';
 
-// Make sure all routes work with the base path
-const useBasePath = () => {
-  return (to: string) => basePath + to.replace(/^\//, '');
-};
-
 function AppRouter() {
+  const { createPath } = useUtils();
   return (
-    <WouterRouter base={basePath}>
-      <div className="flex flex-col min-h-screen">
-        <Switch>
-          <Route path="/auth" component={AuthPage} />
+    <div className="flex flex-col min-h-screen">
+      <Switch>
+        <Route path={createPath("/auth")} component={AuthPage} />
         
-        <Route path="/">
+        <Route path={createPath("/")}>
           <ProtectedRoute>
             <Header />
             <div className="flex-grow">
@@ -42,7 +38,7 @@ function AppRouter() {
           </ProtectedRoute>
         </Route>
         
-        <Route path="/module/:id">
+        <Route path={createPath("/module/:id")}>
           <ProtectedRoute>
             <Header />
             <div className="flex-grow">
@@ -52,7 +48,7 @@ function AppRouter() {
           </ProtectedRoute>
         </Route>
         
-        <Route path="/challenge">
+        <Route path={createPath("/challenge")}>
           <ProtectedRoute>
             <Header />
             <div className="flex-grow">
@@ -62,7 +58,7 @@ function AppRouter() {
           </ProtectedRoute>
         </Route>
         
-        <Route path="/activities">
+        <Route path={createPath("/activities")}>
           <ProtectedRoute>
             <Header />
             <div className="flex-grow">

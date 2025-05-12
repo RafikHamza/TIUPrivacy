@@ -50,9 +50,11 @@ export default function AuthPage() {
   const { toast } = useToast();
 
   // Check if user is already logged in
+  const { createPath } = useUtils();
+  
   if (user) {
     // Get redirect URL if one was saved
-    const redirectUrl = localStorage.getItem('redirectAfterLogin') || '/';
+    const redirectUrl = localStorage.getItem('redirectAfterLogin') || createPath('/');
     localStorage.removeItem('redirectAfterLogin');
     
     // Navigate to redirect URL
