@@ -29,23 +29,14 @@ jobs:
       - name: Install dependencies
         # 'npm ci' is generally recommended for CI/CD for faster, more reliable installs.
         # It uses your package-lock.json file and ensures a clean slate.
-        run: npm ci 
-
-      - name: Build application
-        # This runs the 'build' script defined in your package.json.
-        # Your vite.config.ts should ensure output goes to 'dist/public'.
-        run: npm run build 
-
-      - name: Prepare 404 page for SPA fallback
-        # This copies your main index.html to 404.html. When GitHub Pages can't find a specific
-        # route, it will serve this 404.html. Since it's your app's index.html, your
-        # client-side router (wouter) can then handle the original route.
-        # This assumes your Vite build output is in 'dist/public'.
-        run: cp dist/public/index.html dist/public/404.html
+        run: npm ci      - name: Build application
+        # This runs the GitHub Pages specific build script
+        run: npm run build:gh-pages      - name: Prepare 404 page for SPA fallback
+        # This copies your main index.html to 404.html for SPA routing
+        run: cp dist/index.html dist/404.html
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          branch: gh-pages # The branch the action should deploy to.          # This folder contains the built website (including index.html and 404.html)
-          # It must match the 'outDir' from your vite.config.ts (which is 'dist/public').
-          folder: dist/public
+          branch: gh-pages # The branch the action should deploy to.          # This folder contains the built website
+          folder: dist

@@ -16,7 +16,7 @@ export default defineConfig({
     },
   },
   root: path.resolve(__dirname, "client"),
-  base: "/cybersecurity-education-app/", // Change this to your repo name
+  base: "/TIUPrivacy/", // Updated to match your repository name
   build: {
     outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,
