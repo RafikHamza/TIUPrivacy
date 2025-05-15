@@ -16,7 +16,7 @@ export default defineConfig({
     },
   },
   root: path.resolve(__dirname, "client"),
-  base: "/PhishingSafetyTrainer/", // Updated to match your repository name
+  base: "/TIUPrivacy/", // Updated to match your repository name
   build: {
     outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,
