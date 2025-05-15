@@ -30,7 +30,7 @@ export default defineConfig({
   // --------------------------------------
 
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"), // Your project outputs to 'dist/public'
+    outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
   },
 });

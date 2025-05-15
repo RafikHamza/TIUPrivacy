@@ -1,7 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
-import { useUtils } from "@/hooks/use-utils";
 import { Button } from "@/components/ui/button";
 import { Menu, RotateCcw } from "lucide-react";
 import {
@@ -21,7 +20,6 @@ import {
 
 export default function Header() {
   const [location] = useLocation();
-  const { createPath } = useUtils();
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const { resetUserProgress } = useContext(AppContext);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -36,7 +34,7 @@ export default function Header() {
   };
 
   const isCurrentPage = (path: string) => {
-    return location === createPath(path);
+    return location === path;
   };
 
   const navLinks = [
@@ -58,7 +56,7 @@ export default function Header() {
           className="w-full justify-start md:w-auto"
           onClick={closeMenu}
         >
-          <Link href={createPath(href)}>{label}</Link>
+          <Link href={href}>{label}</Link>
         </Button>
       ))}
     </>
@@ -68,7 +66,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         <div className="mr-4 hidden md:flex">
-          <Link href={createPath("/")} className="mr-6 flex items-center space-x-2">
+          <Link href="/" className="mr-6 flex items-center space-x-2">
             <span className="hidden font-bold sm:inline-block">
               CyberSafe Learning
             </span>
@@ -92,7 +90,7 @@ export default function Header() {
           <SheetContent side="left" className="pr-0">
             <div className="px-7">
               <Link
-                href={createPath("/")}
+                href="/"
                 className="flex items-center"
                 onClick={closeMenu}
               >

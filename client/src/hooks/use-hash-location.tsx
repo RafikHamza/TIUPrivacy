@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 // A custom hook for using hash-based routing with wouter
 const useHashLocation = () => {
   const [loc, setLoc] = useState(window.location.hash.slice(1) || "/");
@@ -21,6 +23,6 @@ const useHashLocation = () => {
   };
 
   return [loc, navigate];
-}
+};
 
 export default useHashLocation;
