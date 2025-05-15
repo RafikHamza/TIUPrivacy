@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CheckCircle, XCircle, Info, Key, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useGameProgress } from './GameProgress';
+import { AppContext } from '@/context/AppContext';
+import type { UserProgress } from '@/lib/storage';
 
 interface PasswordCriteria {
   regex: RegExp;
@@ -15,320 +16,225 @@ interface PasswordCriteria {
   points: number;
 }
 
+interface TestResult {
+  password: string;
+  strength: number;
+}
+
 const passwordCriteria: PasswordCriteria[] = [
   { regex: /.{8,}/, description: "At least 8 characters", points: 1 },
   { regex: /[A-Z]/, description: "Contains uppercase letters", points: 1 },
   { regex: /[a-z]/, description: "Contains lowercase letters", points: 1 },
-  { regex: /[0-9]/, description: "Contains numbers", points: 1 },
-  { regex: /[^A-Za-z0-9]/, description: "Contains special characters", points: 1 },
-  { regex: /.{12,}/, description: "At least 12 characters (extra secure)", points: 1 },
-  { regex: /^(?!.*(.)\1{2,}).*$/, description: "No repeating characters (aaa)", points: 1 },
-  { regex: /^(?!.*(password|123456|qwerty)).*$/i, description: "No common patterns", points: 1 },
+  { regex: /[0-9]/, description: "Contains numbers", points: 2 },
+  { regex: /[^A-Za-z0-9]/, description: "Contains special characters", points: 2 },
+  { regex: /.{12,}/, description: "12+ characters (bonus)", points: 1 }
 ];
 
-// Common bad passwords for the guessing game
-const commonPasswords = [
-  "123456", "password", "12345678", "qwerty", "abc123", 
-  "monkey", "letmein", "dragon", "baseball", "football",
-  "welcome", "admin", "princess", "sunshine", "master",
-  "hello", "freedom", "whatever", "qazwsx", "trustno1"
-];
+const getStrengthCategory = (strength: number): string => {
+  const percentage = (strength / 8) * 100;
+  if (percentage >= 70) return "Strong";
+  if (percentage >= 40) return "Medium";
+  return "Weak";
+};
+
+const getVariantForStrength = (strength: number): "default" | "outline" | "destructive" => {
+  const percentage = (strength / 8) * 100;
+  if (percentage >= 70) return "default";
+  if (percentage >= 40) return "outline";
+  return "destructive";
+};
+
+const getColorClassForStrength = (strength: number): string => {
+  const percentage = (strength / 8) * 100;
+  if (percentage >= 70) return "bg-green-500 hover:bg-green-600 text-white";
+  if (percentage >= 40) return "bg-yellow-500 hover:bg-yellow-600 text-black border-yellow-500";
+  return "";
+};
 
 export default function PasswordStrengthGame() {
+  const { progress, setProgress } = useContext(AppContext);
   const [password, setPassword] = useState("");
-  const [strength, setStrength] = useState(0);
-  const [criteriaMatch, setCriteriaMatch] = useState<boolean[]>([]);
-  const [activeTab, setActiveTab] = useState('strength');
-  const [gamePassword, setGamePassword] = useState("");
-  const [guessAttempts, setGuessAttempts] = useState(0);
-  const [gameGuess, setGameGuess] = useState("");
-  const [gameResult, setGameResult] = useState<"playing" | "won" | "lost">("playing");
-  const [hints, setHints] = useState<string[]>([]);
-  const { updateGameScore } = useGameProgress();
+  const [score, setScore] = useState(0);
+  const [gameComplete, setGameComplete] = useState(false);
+  const [metCriteria, setMetCriteria] = useState<string[]>([]);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [tabValue, setTabValue] = useState("game");
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
 
-  // Initialize a random password for the guessing game
   useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * commonPasswords.length);
-    setGamePassword(commonPasswords[randomIndex]);
-  }, []);
-
-  // Calculate password strength
-  useEffect(() => {
-    const matchResults = passwordCriteria.map(criteria => criteria.regex.test(password));
-    setCriteriaMatch(matchResults);
-    
-    // Calculate total points
-    const totalPoints = matchResults.reduce((total, matches, index) => {
-      return total + (matches ? passwordCriteria[index].points : 0);
-    }, 0);
-    
-    setStrength(totalPoints);
+    // Check password strength when password changes
+    const criteria = passwordCriteria.filter(c => c.regex.test(password));
+    setMetCriteria(criteria.map(c => c.description));
+    const newScore = criteria.reduce((acc, curr) => acc + curr.points, 0);
+    setScore(newScore);
   }, [password]);
 
-  // Get strength category label and color based on 8-point scale
-  const getStrengthCategory = () => {
-    // Calculate percentage (8 points maximum)
-    const percentage = (strength / 8) * 100;
-    
-    if (percentage >= 70) return { label: "Strong", color: "bg-green-500" };
-    if (percentage >= 40) return { label: "Medium", color: "bg-yellow-500" };
-    return { label: "Weak", color: "bg-red-500" };
+  const handleSubmit = () => {
+    setGameComplete(true);
+    setShowFeedback(true);
+
+    // Update progress
+    const updatedProgress: UserProgress = {
+      ...progress,
+      points: progress.points + score * 10,
+      modules: {
+        ...progress.modules,
+        'email': {
+          ...progress.modules['email'],
+          completed: score >= 4,
+          challenges: {
+            ...progress.modules['email'].challenges,
+            'password-strength': true
+          }
+        }
+      }
+    };
+
+    // Award badge if they created a strong password
+    if (score >= 4 && !progress.badges.includes('password-master')) {
+      updatedProgress.badges = [...updatedProgress.badges, 'password-master'];
+    }
+
+    setProgress(updatedProgress);
   };
 
-  // Track game results when won
-  useEffect(() => {
-    if (gameResult === "won") {
-      const score = 100 - (guessAttempts * 20); // 100 for first try, 80 for second, etc.
-      updateGameScore('passwordStrength', score);
-    } else if (gameResult === "lost") {
-      updateGameScore('passwordStrength', 0); // 0 points if lost
-    }
-  }, [gameResult, guessAttempts, updateGameScore]);
-
-  // Handle password guessing game submit
-  const handleGuessSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (gameResult !== "playing") return;
-    
-    // Check if the guess matches the password
-    if (gameGuess.toLowerCase() === gamePassword.toLowerCase()) {
-      setGameResult("won");
-      return;
-    }
-    
-    // Increment attempts and provide hints
-    const attempts = guessAttempts + 1;
-    setGuessAttempts(attempts);
-    
-    // Generate a new hint
-    let newHint = "";
-    if (attempts === 1) {
-      newHint = `The password has ${gamePassword.length} characters`;
-    } else if (attempts === 2) {
-      newHint = `The first character is "${gamePassword[0]}"`;
-    } else if (attempts === 3) {
-      newHint = `The password ${/\d/.test(gamePassword) ? "contains" : "doesn't contain"} numbers`;
-    } else if (attempts === 4) {
-      newHint = `The last character is "${gamePassword[gamePassword.length - 1]}"`;
-    } else if (attempts >= 5) {
-      setGameResult("lost");
-    }
-    
-    if (newHint) {
-      setHints([...hints, newHint]);
-    }
-    
-    // Clear the input field
-    setGameGuess("");
+  const restartGame = () => {
+    setPassword("");
+    setScore(0);
+    setGameComplete(false);
+    setShowFeedback(false);
+    setMetCriteria([]);
   };
 
-  // Reset the guessing game
-  const resetGuessGame = () => {
-    const randomIndex = Math.floor(Math.random() * commonPasswords.length);
-    setGamePassword(commonPasswords[randomIndex]);
-    setGuessAttempts(0);
-    setGameGuess("");
-    setGameResult("playing");
-    setHints([]);
+  const addTestPassword = () => {
+    if (password) {
+      setTestResults([...testResults, { password, strength: score }]);
+      setPassword("");
+    }
   };
-
-  const strengthCategory = getStrengthCategory();
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Password Security Learning</CardTitle>
-        <CardDescription>
-          Learn about creating strong passwords and the dangers of using common passwords
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="strength">
-              <ShieldCheck className="h-4 w-4 mr-2" />
-              Password Strength
-            </TabsTrigger>
-            <TabsTrigger value="guess">
-              <Key className="h-4 w-4 mr-2" />
-              Common Password Game
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="strength" className="space-y-4 mt-4">
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="password" className="text-sm font-medium">
-                  Test your password strength:
-                </label>
-                <Input
-                  id="password"
-                  type="text"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Enter a password to check"
-                  className="mt-1"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Strength: {Math.round((strength / 8) * 100)}%</span>
-                  <Badge variant={
-                    (strength / 8) * 100 >= 70 ? "default" : 
-                    (strength / 8) * 100 >= 40 ? "outline" : "destructive"
-                  } className={
-                    (strength / 8) * 100 >= 70 ? "bg-green-500 hover:bg-green-600 text-white" :
-                    (strength / 8) * 100 >= 40 ? "bg-yellow-500 hover:bg-yellow-600 text-black border-yellow-500" : ""
-                  }>
-                    {strengthCategory.label}
-                  </Badge>
-                </div>
-                <Progress
-                  value={(strength / 8) * 100}
-                  className={`h-2 ${strengthCategory.color}`}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Password criteria:</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {passwordCriteria.map((criteria, index) => (
-                    <div 
-                      key={index} 
-                      className="flex items-center text-sm"
-                    >
-                      {criteriaMatch[index] ? (
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
-                      )}
-                      <span>{criteria.description}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertTitle>Password Tips</AlertTitle>
-                <AlertDescription>
-                  <ul className="list-disc pl-5 space-y-1 mt-2">
-                    <li>Use a mix of characters, numbers, and symbols</li>
-                    <li>Make passwords at least 12 characters long</li>
-                    <li>Avoid using personal information</li>
-                    <li>Don't use the same password for multiple accounts</li>
-                    <li>Consider using a password manager</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="guess" className="space-y-4 mt-4">
-            <div className="space-y-4">
-              <div>
-                <Alert className="mb-4 border-yellow-500 bg-yellow-50 text-yellow-800">
-                  <AlertCircle className="h-4 w-4 text-yellow-800" />
-                  <AlertTitle>The Danger of Common Passwords</AlertTitle>
-                  <AlertDescription>
-                    Hackers often try common passwords first. This game demonstrates how easily they can be guessed.
-                  </AlertDescription>
-                </Alert>
+    <div className="space-y-4">
+      <Tabs value={tabValue} onValueChange={setTabValue} className="w-full">
+        <TabsList>
+          <TabsTrigger value="game">Password Game</TabsTrigger>
+          <TabsTrigger value="test">Password Tester</TabsTrigger>
+        </TabsList>
 
-                {gameResult === "playing" && (
-                  <form onSubmit={handleGuessSubmit} className="space-y-4">
-                    <div>
-                      <label htmlFor="guess" className="text-sm font-medium">
-                        Try to guess the common password:
-                      </label>
-                      <div className="flex mt-1">
-                        <Input
-                          id="guess"
-                          type="text"
-                          value={gameGuess}
-                          onChange={e => setGameGuess(e.target.value)}
-                          placeholder="Enter your guess"
-                          className="rounded-r-none"
-                        />
-                        <Button type="submit" className="rounded-l-none">
-                          Guess
-                        </Button>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Attempts: {guessAttempts}/5
-                      </p>
-                    </div>
-                    
-                    {hints.length > 0 && (
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium">Hints:</h3>
-                        <ul className="space-y-1">
-                          {hints.map((hint, index) => (
-                            <li key={index} className="text-sm flex items-center">
-                              <Info className="h-3 w-3 text-blue-500 mr-2" />
-                              {hint}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+        <TabsContent value="game">
+          <Card>
+            <CardHeader>
+              <CardTitle>Password Strength Game</CardTitle>
+              <CardDescription>
+                Create a strong password that meets security criteria
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Input
+                  type="text"
+                  placeholder="Enter a password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={gameComplete}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Password Strength</span>
+                  <span>{getStrengthCategory(score)}</span>
+                </div>
+                <Progress value={(score / 8) * 100} className="h-2" />
+              </div>
+
+              <div className="space-y-2">
+                {passwordCriteria.map((criteria) => (
+                  <div
+                    key={criteria.description}
+                    className="flex items-center space-x-2"
+                  >
+                    {criteria.regex.test(password) ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-gray-300" />
                     )}
-                  </form>
-                )}
-                
-                {gameResult === "won" && (
-                  <Alert className="mb-4 border-green-500 bg-green-50 text-green-800">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertTitle>You guessed correctly!</AlertTitle>
-                    <AlertDescription>
-                      The password was "{gamePassword}". This demonstrates why using common passwords is dangerous.
-                      <Button 
-                        variant="outline" 
-                        className="mt-2" 
-                        onClick={resetGuessGame}
-                      >
-                        Play Again
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                {gameResult === "lost" && (
-                  <Alert variant="destructive" className="mb-4">
-                    <ShieldAlert className="h-4 w-4" />
-                    <AlertTitle>Game Over</AlertTitle>
-                    <AlertDescription>
-                      The password was "{gamePassword}". Even though you couldn't guess it in 5 tries, 
-                      automated tools can try thousands of passwords per second.
-                      <Button 
-                        variant="outline" 
-                        className="mt-2" 
-                        onClick={resetGuessGame}
-                      >
-                        Play Again
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                <Alert className="mt-4">
-                  <Info className="h-4 w-4" />
-                  <AlertTitle>Security Best Practices</AlertTitle>
+                    <span className="text-sm">{criteria.description}</span>
+                  </div>
+                ))}
+              </div>
+
+              {showFeedback && (
+                <Alert
+                  variant={score >= 4 ? "default" : "destructive"}
+                >
+                  {score >= 4 ? (
+                    <CheckCircle className="h-4 w-4" />
+                  ) : (
+                    <XCircle className="h-4 w-4" />
+                  )}
+                  <AlertTitle>
+                    {score >= 4 ? "Great Password!" : "Try Again"}
+                  </AlertTitle>
                   <AlertDescription>
-                    <ul className="list-disc pl-5 space-y-1 mt-2">
-                      <li>Never use common passwords like "password" or "123456"</li>
-                      <li>Avoid using personal information that others might know</li>
-                      <li>Use unique passwords for each of your accounts</li>
-                      <li>Enable two-factor authentication when available</li>
-                    </ul>
+                    {score >= 4
+                      ? "Your password meets the security requirements."
+                      : "Your password needs to be stronger. Try adding more variety."}
                   </AlertDescription>
                 </Alert>
+              )}
+            </CardContent>
+            <CardFooter>
+              {!gameComplete ? (
+                <Button className="w-full" onClick={handleSubmit}>
+                  Submit Password
+                </Button>
+              ) : (
+                <Button className="w-full" onClick={restartGame}>
+                  Try Another Password
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="test">
+          <Card>
+            <CardHeader>
+              <CardTitle>Password Tester</CardTitle>
+              <CardDescription>
+                Test multiple passwords to see their strength
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex space-x-2">
+                <Input
+                  type="text"
+                  placeholder="Enter a password to test"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="flex-1"
+                />
+                <Button onClick={addTestPassword}>Test</Button>
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+
+              <div className="space-y-2">
+                {testResults.map((result, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-2 border rounded"
+                  >
+                    <span className="text-sm">{result.password}</span>
+                    <Badge variant={getVariantForStrength(result.strength)}>
+                      {getStrengthCategory(result.strength)}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

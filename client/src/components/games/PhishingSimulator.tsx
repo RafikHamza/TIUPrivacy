@@ -1,14 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, CheckCircle, XCircle, Mail, Shield, Award } from 'lucide-react';
-import { useGameProgress } from './GameProgress';
+import { AppContext } from '@/context/AppContext';
+import type { UserProgress } from '@/lib/storage';
 
-// Sample phishing emails
-const phishingExamples = [
+interface PhishingEmail {
+  id: number;
+  subject: string;
+  sender: string;
+  body: string;
+  cta: string;
+  isPhishing: boolean;
+  clues: string[];
+}
+
+const phishingExamples: PhishingEmail[] = [
   {
     id: 1,
     subject: "Your Account Has Been Compromised",
@@ -79,74 +89,70 @@ const phishingExamples = [
 ];
 
 export default function PhishingSimulator() {
+  const { progress, setProgress } = useContext(AppContext);
   const [currentEmail, setCurrentEmail] = useState<number>(0);
-  const [userAnswers, setUserAnswers] = useState<{[key: number]: boolean}>({});
   const [score, setScore] = useState<number>(0);
   const [gameComplete, setGameComplete] = useState<boolean>(false);
+  const [shuffledEmails, setShuffledEmails] = useState<PhishingEmail[]>([]);
+  const [showClues, setShowClues] = useState<boolean>(false);
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
-  const [currentFeedback, setCurrentFeedback] = useState<{correct: boolean, explanation: string}>({
+  const [lastAnswer, setLastAnswer] = useState<{ correct: boolean; isPhishing: boolean }>({
     correct: false,
-    explanation: ''
+    isPhishing: false,
   });
-  const [shuffledEmails, setShuffledEmails] = useState<typeof phishingExamples>([]);
-  const { updateGameScore } = useGameProgress();
 
-  // Update game progress when complete
   useEffect(() => {
-    if (gameComplete) {
-      updateGameScore('phishingSimulator', score);
-    }
-  }, [gameComplete, score, updateGameScore]);
-
-  // Shuffle emails at start
-  useEffect(() => {
-    const shuffled = [...phishingExamples].sort(() => Math.random() - 0.5);
-    setShuffledEmails(shuffled);
+    setShuffledEmails([...phishingExamples].sort(() => Math.random() - 0.5));
   }, []);
 
-  const handleAnswer = (isPhishing: boolean) => {
-    const email = shuffledEmails[currentEmail];
-    const isCorrect = email.isPhishing === isPhishing;
-    
-    // Update answer and score
-    setUserAnswers({
-      ...userAnswers,
-      [currentEmail]: isCorrect
-    });
-    
-    if (isCorrect) {
-      // Increment by 1 point instead of 20 per instructor's request
+  const handleAnswer = (selectedIsPhishing: boolean) => {
+    const correct = selectedIsPhishing === shuffledEmails[currentEmail].isPhishing;
+    if (correct) {
       setScore(score + 1);
     }
-    
-    // Show feedback
-    setCurrentFeedback({
-      correct: isCorrect,
-      explanation: email.isPhishing 
-        ? `This is a phishing email. Clues: ${email.clues.join('. ')}`
-        : `This is a legitimate email. Indicators: ${email.clues.join('. ')}`
-    });
+    setLastAnswer({ correct, isPhishing: shuffledEmails[currentEmail].isPhishing });
     setShowFeedback(true);
   };
 
   const nextEmail = () => {
-    setShowFeedback(false);
-    
     if (currentEmail < shuffledEmails.length - 1) {
       setCurrentEmail(currentEmail + 1);
+      setShowClues(false);
+      setShowFeedback(false);
     } else {
+      // Game complete
       setGameComplete(true);
+      
+      const updatedProgress: UserProgress = {
+        ...progress,
+        points: progress.points + score * 10, // 10 points per correct answer
+        badges: score >= 8 && !progress.badges.includes('phishing-expert')
+          ? [...progress.badges, 'phishing-expert']
+          : progress.badges,
+        modules: {
+          ...progress.modules,
+          'phishing': {
+            ...progress.modules['phishing'],
+            completed: score >= 8, // Complete if score is 80% or higher
+            challenges: {
+              ...progress.modules['phishing'].challenges,
+              'phishing-simulator': true
+            }
+          }
+        }
+      };
+      
+      setProgress(updatedProgress);
     }
   };
 
   const restartGame = () => {
-    const shuffled = [...phishingExamples].sort(() => Math.random() - 0.5);
-    setShuffledEmails(shuffled);
     setCurrentEmail(0);
-    setUserAnswers({});
     setScore(0);
     setGameComplete(false);
+    setShowClues(false);
     setShowFeedback(false);
+    setShuffledEmails([...phishingExamples].sort(() => Math.random() - 0.5));
   };
 
   if (shuffledEmails.length === 0) {
@@ -259,19 +265,19 @@ export default function PhishingSimulator() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {currentFeedback.correct ? (
+              {lastAnswer.correct ? (
                 <><CheckCircle className="h-5 w-5 text-green-500" /> Correct!</>
               ) : (
                 <><XCircle className="h-5 w-5 text-red-500" /> Incorrect!</>
               )}
             </DialogTitle>
             <DialogDescription>
-              {email.isPhishing ? (
+              {lastAnswer.isPhishing ? (
                 <Alert variant="destructive" className="mt-2">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>This is a phishing email</AlertTitle>
                   <AlertDescription>
-                    {currentFeedback.explanation}
+                    {shuffledEmails[currentEmail].clues.join('. ')}
                   </AlertDescription>
                 </Alert>
               ) : (
@@ -279,7 +285,7 @@ export default function PhishingSimulator() {
                   <CheckCircle className="h-4 w-4 text-green-500" />
                   <AlertTitle>This is a legitimate email</AlertTitle>
                   <AlertDescription>
-                    {currentFeedback.explanation}
+                    {shuffledEmails[currentEmail].clues.join('. ')}
                   </AlertDescription>
                 </Alert>
               )}

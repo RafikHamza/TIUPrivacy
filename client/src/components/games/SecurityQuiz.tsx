@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -7,9 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Award, BookOpen, CheckCircle, XCircle, ArrowLeft, ArrowRight, Loader2, RefreshCcw } from 'lucide-react';
-import { useGameProgress } from './GameProgress';
+import { AppContext } from '@/context/AppContext';
+import type { UserProgress } from '@/lib/storage';
 
-// Define quiz question type
 interface QuizQuestion {
   id: number;
   question: string;
@@ -18,208 +18,164 @@ interface QuizQuestion {
   explanation: string;
 }
 
-// All quiz questions
 const quizQuestions: QuizQuestion[] = [
   {
     id: 1,
-    question: "What is phishing?",
+    question: "What is a strong indicator that an email might be phishing?",
     options: [
-      "A secure authentication method",
-      "A technique to trick users into revealing sensitive information",
-      "A type of computer virus",
-      "A secure way to share files online"
+      "The sender's email address looks similar to a legitimate company but has small differences",
+      "The email was sent during business hours",
+      "The email contains the company's official logo",
+      "The email is addressed to you by name"
     ],
-    correctAnswer: 1,
-    explanation: "Phishing is a fraudulent attempt to obtain sensitive information such as usernames, passwords, and credit card details by disguising as a trustworthy entity in electronic communication."
+    correctAnswer: 0,
+    explanation: "Phishers often use email addresses that look similar to legitimate ones but have slight differences (e.g., support@arnaz0n.com instead of amazon.com)."
   },
   {
     id: 2,
-    question: "Which of the following is a good password practice?",
+    question: "Which password is most secure?",
     options: [
-      "Using the same password for all accounts",
-      "Writing passwords on sticky notes",
-      "Using personal information like birthdates",
-      "Using a combination of letters, numbers, and special characters"
+      "Password123",
+      "MyBirthday1990",
+      "P@ssw0rd!",
+      "kM9$pL2#vN5*qR"
     ],
     correctAnswer: 3,
-    explanation: "Using a combination of uppercase and lowercase letters, numbers, and special characters makes passwords harder to crack. Additionally, passwords should be unique for each account and never written down or shared."
+    explanation: "The last option is strongest because it uses a mix of uppercase, lowercase, numbers, and special characters in a random pattern."
   },
   {
     id: 3,
-    question: "What is two-factor authentication (2FA)?",
+    question: "What should you do if you suspect your account has been compromised?",
     options: [
-      "Having two passwords for one account",
-      "Using two different browsers to log in",
-      "A security process requiring two different authentication methods",
-      "Changing your password twice a year"
+      "Wait and see if anything unusual happens",
+      "Only notify your friends",
+      "Immediately change your password and enable two-factor authentication",
+      "Just enable two-factor authentication"
     ],
     correctAnswer: 2,
-    explanation: "Two-factor authentication adds an extra layer of security by requiring two different types of identification: something you know (like a password) and something you have (like a phone receiving a verification code)."
+    explanation: "Changing your password and enabling 2FA provides two layers of protection against unauthorized access."
   },
   {
     id: 4,
-    question: "Which of these is a sign of a potential phishing email?",
+    question: "What is two-factor authentication (2FA)?",
     options: [
-      "The email is from someone in your contact list",
-      "The email has a generic greeting like 'Dear Customer'",
-      "The email was sent during business hours",
-      "The email has the company's official logo"
+      "Having two passwords",
+      "A second way to verify your identity, like a code sent to your phone",
+      "Logging in from two different devices",
+      "Double-checking your password"
     ],
     correctAnswer: 1,
-    explanation: "Generic greetings like 'Dear Customer' or 'Dear User' instead of your name are common in phishing emails because attackers often don't know your name."
+    explanation: "2FA adds an extra layer of security by requiring two different types of verification - typically something you know (password) and something you have (like your phone)."
   },
   {
     id: 5,
-    question: "What is a strong defense against malware?",
+    question: "Which practice is most secure for storing passwords?",
     options: [
-      "Opening all email attachments to check them",
-      "Using public Wi-Fi whenever possible",
-      "Keeping software and operating systems updated",
-      "Disabling your firewall"
+      "Writing them down in a notebook",
+      "Using the same password for all accounts",
+      "Using a reputable password manager",
+      "Saving them in a text file on your computer"
     ],
     correctAnswer: 2,
-    explanation: "Keeping software, applications, and operating systems updated ensures you have the latest security patches to protect against known vulnerabilities."
-  },
-  {
-    id: 6,
-    question: "What is social engineering in cybersecurity?",
-    options: [
-      "Building secure social media platforms",
-      "Psychological manipulation to trick people into revealing confidential information",
-      "Creating fake social media profiles",
-      "Adding friends to your social networks"
-    ],
-    correctAnswer: 1,
-    explanation: "Social engineering uses psychological manipulation to trick users into making security mistakes or giving away sensitive information. It relies on human error rather than technical hacking techniques."
-  },
-  {
-    id: 7,
-    question: "Why should you be cautious about public Wi-Fi?",
-    options: [
-      "It's always too slow to use",
-      "It's always encrypted and secure",
-      "Attackers can potentially intercept data on unsecured networks",
-      "Public Wi-Fi uses too much battery power"
-    ],
-    correctAnswer: 2,
-    explanation: "Public Wi-Fi networks are often unsecured, allowing attackers to potentially intercept the data you're sending and receiving. Using a VPN can help protect your data when using public Wi-Fi."
-  },
-  {
-    id: 8,
-    question: "What is the purpose of encryption?",
-    options: [
-      "To make data smaller for efficient storage",
-      "To convert data into a code to prevent unauthorized access",
-      "To scan files for viruses",
-      "To speed up internet connections"
-    ],
-    correctAnswer: 1,
-    explanation: "Encryption converts information into a code to prevent unauthorized access. Even if someone intercepts the data, they can't read it without the encryption key."
-  },
-  {
-    id: 9,
-    question: "What should you do if you suspect your account has been compromised?",
-    options: [
-      "Ignore it and hope nothing happens",
-      "Only check if money is missing",
-      "Immediately change your password and enable 2FA if available",
-      "Share the suspicious activity on social media"
-    ],
-    correctAnswer: 2,
-    explanation: "If you suspect your account has been compromised, you should immediately change your password, enable two-factor authentication if available, and check for any unauthorized activity."
-  },
-  {
-    id: 10,
-    question: "What is a secure way to back up important data?",
-    options: [
-      "Store it only on your computer's hard drive",
-      "Use the 3-2-1 backup strategy (3 copies, 2 different media types, 1 offsite)",
-      "Email copies of important files to yourself",
-      "Only save important files on USB drives"
-    ],
-    correctAnswer: 1,
-    explanation: "The 3-2-1 backup strategy involves having at least 3 copies of your data, stored on 2 different types of media, with 1 copy kept offsite. This provides multiple layers of protection against various types of data loss."
+    explanation: "Password managers securely encrypt your passwords and often include features like password generation and breach monitoring."
   }
 ];
 
 export default function SecurityQuiz() {
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [isAnswered, setIsAnswered] = useState(false);
+  const { progress, setProgress } = useContext(AppContext);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [score, setScore] = useState(0);
-  const [showResult, setShowResult] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [quizComplete, setQuizComplete] = useState(false);
+  const [questionsOrder, setQuestionsOrder] = useState<number[]>([]);
+  const [reviewMode, setReviewMode] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const { updateGameScore } = useGameProgress();
 
-  // Initialize quiz with shuffled questions
   useEffect(() => {
-    const shuffled = [...quizQuestions].sort(() => Math.random() - 0.5).slice(0, 5);
-    setQuestions(shuffled);
-    setLoading(false);
+    // Generate array of indices and shuffle them
+    const indices = Array.from({ length: quizQuestions.length }, (_, i) => i);
+    setQuestionsOrder(indices.sort(() => Math.random() - 0.5));
   }, []);
-  
-  // Update game progress when results are shown
-  useEffect(() => {
-    if (showResult) {
-      const percentage = Math.round((score / questions.length) * 100);
-      updateGameScore('securityQuiz', percentage);
-    }
-  }, [showResult, score, questions.length, updateGameScore]);
 
-  const handleOptionSelect = (index: number) => {
-    if (isAnswered) return;
-    setSelectedOption(index);
-  };
-
-  const handleSubmitAnswer = () => {
-    if (selectedOption === null || isAnswered) return;
-
-    const currentQuestion = questions[currentQuestionIndex];
-    const isCorrect = selectedOption === currentQuestion.correctAnswer;
-
+  const handleAnswer = (answer: number) => {
+    setSelectedAnswer(answer);
+    setShowFeedback(true);
+    
+    const isCorrect = answer === quizQuestions[questionsOrder[currentQuestion]].correctAnswer;
     if (isCorrect) {
-      setScore(prevScore => prevScore + 1);
+      setScore(score + 1);
     }
-
-    setIsAnswered(true);
-    setShowExplanation(true);
   };
 
-  const handleNextQuestion = () => {
-    setSelectedOption(null);
-    setIsAnswered(false);
+  const nextQuestion = () => {
+    setSelectedAnswer(null);
+    setShowFeedback(false);
     setShowExplanation(false);
 
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    if (currentQuestion < quizQuestions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
     } else {
-      setShowResult(true);
+      setQuizComplete(true);
+      
+      // Update progress
+      const updatedProgress: UserProgress = {
+        ...progress,
+        points: progress.points + score * 10,
+        modules: {
+          ...progress.modules,
+          'security': {
+            ...progress.modules['security'],
+            completed: score >= 4,
+            challenges: {
+              ...progress.modules['security'].challenges,
+              'security-quiz': true
+            }
+          }
+        }
+      };
+
+      // Award badge if they got a high score
+      if (score >= 4 && !progress.badges.includes('quiz-master')) {
+        updatedProgress.badges = [...updatedProgress.badges, 'quiz-master'];
+      }
+
+      setProgress(updatedProgress);
     }
   };
 
-  const handlePreviousQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-      setSelectedOption(null);
-      setIsAnswered(false);
+  const previousQuestion = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+      setSelectedAnswer(null);
+      setShowFeedback(false);
       setShowExplanation(false);
     }
   };
 
   const restartQuiz = () => {
-    const shuffled = [...quizQuestions].sort(() => Math.random() - 0.5).slice(0, 5);
-    setQuestions(shuffled);
-    setCurrentQuestionIndex(0);
-    setSelectedOption(null);
-    setIsAnswered(false);
+    // Generate new shuffled order
+    const indices = Array.from({ length: quizQuestions.length }, (_, i) => i);
+    setQuestionsOrder(indices.sort(() => Math.random() - 0.5));
+    
+    setCurrentQuestion(0);
+    setSelectedAnswer(null);
     setScore(0);
-    setShowResult(false);
+    setShowFeedback(false);
+    setQuizComplete(false);
+    setReviewMode(false);
     setShowExplanation(false);
   };
 
-  if (loading) {
+  const startReview = () => {
+    setCurrentQuestion(0);
+    setSelectedAnswer(null);
+    setShowFeedback(false);
+    setReviewMode(true);
+    setShowExplanation(false);
+  };
+
+  if (questionsOrder.length === 0) {
     return (
       <div className="flex items-center justify-center p-10">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -227,149 +183,158 @@ export default function SecurityQuiz() {
     );
   }
 
-  if (showResult) {
-    const percentage = Math.round((score / questions.length) * 100);
+  if (quizComplete) {
     return (
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-center">Quiz Results</CardTitle>
+          <CardTitle className="text-center">Quiz Complete!</CardTitle>
           <CardDescription className="text-center">
-            You scored {score} out of {questions.length} questions ({percentage}%)
+            You scored {score} out of {quizQuestions.length} points
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="text-center">
             <Award className="h-16 w-16 mx-auto text-primary" />
             <p className="mt-4 text-lg">
-              {percentage >= 80 ? "Excellent job! You have strong cybersecurity knowledge." :
-               percentage >= 60 ? "Good work! You have a solid understanding of cybersecurity concepts." :
-               "You're making progress. Keep learning about cybersecurity!"}
+              {score >= 4 ? "Great job! You're well-versed in security practices!" :
+               "Keep learning about security best practices!"}
             </p>
           </div>
           
-          <div className="space-y-3">
-            <h3 className="font-semibold">Key Security Reminders:</h3>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Always be cautious of phishing attempts</li>
-              <li>Use strong, unique passwords for each account</li>
-              <li>Enable two-factor authentication when possible</li>
-              <li>Keep your software and systems updated</li>
-              <li>Be careful with sensitive information on public networks</li>
-            </ul>
+          <div className="space-y-4">
+            <h3 className="font-semibold text-center">Want to improve your score?</h3>
+            <div className="flex justify-center gap-4">
+              <Button onClick={restartQuiz}>
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                Try Again
+              </Button>
+              <Button variant="outline" onClick={startReview}>
+                <BookOpen className="mr-2 h-4 w-4" />
+                Review Answers
+              </Button>
+            </div>
           </div>
         </CardContent>
-        <CardFooter>
-          <Button className="w-full" onClick={restartQuiz}>
-            <RefreshCcw className="mr-2 h-4 w-4" />
-            Take Another Quiz
-          </Button>
-        </CardFooter>
       </Card>
     );
   }
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex) / questions.length) * 100;
+  const currentQuizQuestion = quizQuestions[questionsOrder[currentQuestion]];
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Cybersecurity Quiz</CardTitle>
-        <CardDescription>
-          Test your knowledge of cybersecurity best practices
-        </CardDescription>
-        <div className="flex justify-between items-center mt-2">
-          <div className="text-sm">
-            Question {currentQuestionIndex + 1} of {questions.length}
+    <div className="space-y-4">
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <Badge variant="outline">
+              Question {currentQuestion + 1} of {quizQuestions.length}
+            </Badge>
+            <Badge variant="outline">
+              Score: {score}/{currentQuestion + (showFeedback ? 1 : 0)}
+            </Badge>
           </div>
-          <div className="text-sm font-medium">
-            Score: {score}/{currentQuestionIndex}
-          </div>
-        </div>
-        <Progress value={progress} className="h-2" />
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">{currentQuestion.question}</h3>
-          
-          <RadioGroup value={selectedOption?.toString()} className="space-y-3">
-            {currentQuestion.options.map((option, index) => (
-              <div key={index} className="flex items-center space-x-2">
+          <CardTitle className="mt-4">{currentQuizQuestion.question}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <RadioGroup
+            value={selectedAnswer?.toString()}
+            onValueChange={(value) => !showFeedback && handleAnswer(parseInt(value))}
+            className="space-y-2"
+          >
+            {currentQuizQuestion.options.map((option, index) => (
+              <div
+                key={index}
+                className={`flex items-center space-x-2 p-2 rounded ${
+                  showFeedback
+                    ? index === currentQuizQuestion.correctAnswer
+                      ? "bg-green-100"
+                      : selectedAnswer === index
+                      ? "bg-red-100"
+                      : ""
+                    : "hover:bg-gray-100"
+                }`}
+              >
                 <RadioGroupItem
                   value={index.toString()}
                   id={`option-${index}`}
-                  disabled={isAnswered}
-                  onClick={() => handleOptionSelect(index)}
+                  disabled={showFeedback}
                 />
-                <Label 
+                <Label
                   htmlFor={`option-${index}`}
-                  className={`flex-1 cursor-pointer ${
-                    isAnswered && index === currentQuestion.correctAnswer
-                      ? "text-green-600 font-medium"
-                      : isAnswered && index === selectedOption && index !== currentQuestion.correctAnswer
-                      ? "text-red-600 font-medium"
-                      : ""
-                  }`}
+                  className="flex-grow cursor-pointer"
                 >
-                  <div className="flex items-center justify-between">
-                    <span>{option}</span>
-                    {isAnswered && index === currentQuestion.correctAnswer && (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    )}
-                    {isAnswered && index === selectedOption && index !== currentQuestion.correctAnswer && (
-                      <XCircle className="h-5 w-5 text-red-500" />
-                    )}
-                  </div>
+                  {option}
                 </Label>
+                {showFeedback && (
+                  index === currentQuizQuestion.correctAnswer ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : selectedAnswer === index ? (
+                    <XCircle className="h-4 w-4 text-red-500" />
+                  ) : null
+                )}
               </div>
             ))}
           </RadioGroup>
-          
-          {showExplanation && (
-            <div className="mt-4 p-4 bg-muted rounded-md">
-              <div className="flex items-start gap-2">
-                <BookOpen className="h-5 w-5 text-primary mt-0.5" />
-                <div>
-                  <h4 className="font-medium">Explanation:</h4>
-                  <p className="text-sm">{currentQuestion.explanation}</p>
-                </div>
-              </div>
+
+          {showFeedback && (
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowExplanation(!showExplanation)}
+              >
+                {showExplanation ? "Hide" : "Show"} Explanation
+              </Button>
+              {showExplanation && (
+                <p className="mt-2 text-sm text-gray-600">
+                  {currentQuizQuestion.explanation}
+                </p>
+              )}
             </div>
           )}
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button 
-          variant="outline" 
-          onClick={handlePreviousQuestion}
-          disabled={currentQuestionIndex === 0}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Previous
-        </Button>
-        
-        <div className="flex gap-2">
-          {!isAnswered ? (
-            <Button 
-              onClick={handleSubmitAnswer}
-              disabled={selectedOption === null}
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={previousQuestion}
+            disabled={currentQuestion === 0}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Previous
+          </Button>
+          
+          {!showFeedback ? (
+            <Button
+              disabled={selectedAnswer === null}
+              onClick={() => handleAnswer(selectedAnswer!)}
             >
-              Check Answer
+              Submit Answer
             </Button>
           ) : (
-            <Button onClick={handleNextQuestion}>
-              {currentQuestionIndex < questions.length - 1 ? (
+            <Button onClick={nextQuestion}>
+              {currentQuestion === quizQuestions.length - 1 ? (
+                "Complete Quiz"
+              ) : (
                 <>
                   Next
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </>
-              ) : (
-                "See Results"
               )}
             </Button>
           )}
+        </CardFooter>
+      </Card>
+
+      <div className="flex justify-between items-center max-w-2xl mx-auto">
+        <div className="flex-1 mr-4">
+          <Progress
+            value={((currentQuestion + (showFeedback ? 1 : 0)) / quizQuestions.length) * 100}
+            className="h-2"
+          />
         </div>
-      </CardFooter>
-    </Card>
+        <span className="text-sm font-medium">
+          Progress: {currentQuestion + (showFeedback ? 1 : 0)}/{quizQuestions.length}
+        </span>
+      </div>
+    </div>
   );
 }

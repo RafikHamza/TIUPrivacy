@@ -4,7 +4,6 @@ import { AppContext } from "@/context/AppContext";
 import { useUtils } from "@/hooks/use-utils";
 import { Button } from "@/components/ui/button";
 import { Menu, RotateCcw } from "lucide-react";
-import { UserProfileMenu } from "@/components/auth/UserProfileMenu";
 import {
   Sheet,
   SheetContent,
@@ -20,140 +19,122 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-const Header = () => {
+export default function Header() {
   const [location] = useLocation();
-  const { progress, resetProgressState } = useContext(AppContext);
-  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
-
   const { createPath } = useUtils();
-  const navItems = [
-    { name: "Home", href: createPath("/") },
-    { name: "Lessons", href: createPath("/module/phishing") },
-    { name: "Activities", href: createPath("/activities") },
-  ];
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const { resetUserProgress } = useContext(AppContext);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleReset = () => {
-    resetProgressState();
-    setIsResetDialogOpen(false);
-    // Redirect to home page
-    window.location.href = createPath('/');
+  const closeMenu = () => {
+    setIsMobileMenuOpen(false);
   };
 
+  const handleResetProgress = async () => {
+    await resetUserProgress();
+    setIsResetDialogOpen(false);
+  };
+
+  const isCurrentPage = (path: string) => {
+    return location === createPath(path);
+  };
+
+  const navLinks = [
+    { href: "/", label: "Home" },
+    { href: "/module/phishing", label: "Phishing Safety" },
+    { href: "/module/email", label: "Email Security" },
+    { href: "/module/socialMedia", label: "Social Media" },
+    { href: "/module/aiChatbots", label: "AI Chatbots" },
+    { href: "/challenge", label: "Final Challenge" },
+  ];
+
+  const renderNavLinks = () => (
+    <>
+      {navLinks.map(({ href, label }) => (
+        <Button
+          key={href}
+          variant={isCurrentPage(href) ? "secondary" : "ghost"}
+          asChild
+          className="w-full justify-start md:w-auto"
+          onClick={closeMenu}
+        >
+          <Link href={createPath(href)}>{label}</Link>
+        </Button>
+      ))}
+    </>
+  );
+
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center">
-              <i className="ri-shield-keyhole-line text-primary text-3xl mr-2"></i>
-              <Link href="/">
-                <span className="font-inter font-bold text-lg text-neutral-800 cursor-pointer">CyberSafe</span>
-              </Link>
-            </div>
-          </div>
-          
-          <nav className="hidden md:flex space-x-8 items-center">
-            {navItems.map((item) => (
-              <Link key={item.name} href={item.href}>
-                <span 
-                  className={`font-inter font-medium cursor-pointer ${
-                    location === item.href || 
-                    (item.href !== "/" && location.startsWith(item.href))
-                      ? "text-primary border-b-2 border-primary" 
-                      : "text-neutral-600 hover:text-primary"
-                  } px-3 py-2 text-sm`}
-                >
-                  {item.name}
-                </span>
-              </Link>
-            ))}
-            <div className="ml-4 flex items-center gap-3">
-              <span className="bg-accent/10 text-accent px-3 py-1 rounded-full text-sm font-medium">
-                <i className="ri-coin-line mr-1"></i>
-                <span>{progress.points}</span> points
-              </span>
-              
-              <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" title="Reset Progress">
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Reset All Progress</DialogTitle>
-                    <DialogDescription>
-                      This will reset all your learning progress, scores, and badges. This action cannot be undone.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsResetDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button variant="destructive" onClick={handleReset}>
-                      Reset Everything
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              
-              {/* User Profile Menu */}
-              <UserProfileMenu />
-            </div>
+    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="mr-4 hidden md:flex">
+          <Link href={createPath("/")} className="mr-6 flex items-center space-x-2">
+            <span className="hidden font-bold sm:inline-block">
+              CyberSafe Learning
+            </span>
+          </Link>
+
+          <nav className="flex items-center space-x-6 text-sm font-medium">
+            {renderNavLinks()}
           </nav>
-          
-          <div className="md:hidden flex items-center">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6" />
+        </div>
+
+        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+          <SheetTrigger asChild className="md:hidden">
+            <Button
+              variant="ghost"
+              className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
+            >
+              <Menu className="h-6 w-6" />
+              <span className="sr-only">Toggle Menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="pr-0">
+            <div className="px-7">
+              <Link
+                href={createPath("/")}
+                className="flex items-center"
+                onClick={closeMenu}
+              >
+                <span className="font-bold">CyberSafe Learning</span>
+              </Link>
+            </div>
+            <nav className="flex flex-col space-y-3 px-7 pb-4 pt-4">
+              {renderNavLinks()}
+            </nav>
+          </SheetContent>
+        </Sheet>
+
+        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" title="Reset Progress">
+                <RotateCcw className="h-5 w-5" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Reset Progress</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to reset all your progress? This action
+                  cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="secondary"
+                  onClick={() => setIsResetDialogOpen(false)}
+                >
+                  Cancel
                 </Button>
-              </SheetTrigger>
-              <SheetContent side="right">
-                <div className="flex flex-col space-y-4 mt-8">
-                  {navItems.map((item) => (
-                    <Link key={item.name} href={item.href}>
-                      <span 
-                        className={`font-inter font-medium cursor-pointer ${
-                          location === item.href || 
-                          (item.href !== "/" && location.startsWith(item.href))
-                            ? "text-primary" 
-                            : "text-neutral-600 hover:text-primary"
-                        } px-3 py-2 text-sm block`}
-                      >
-                        {item.name}
-                      </span>
-                    </Link>
-                  ))}
-                  <div className="px-3 py-2 flex items-center justify-between">
-                    <span className="bg-accent/10 text-accent px-3 py-1 rounded-full text-sm font-medium">
-                      <i className="ri-coin-line mr-1"></i>
-                      <span>{progress.points}</span> points
-                    </span>
-                    
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setIsResetDialogOpen(true)}
-                      title="Reset Progress"
-                    >
-                      <RotateCcw className="h-4 w-4 mr-1" />
-                      Reset
-                    </Button>
-                  </div>
-                  
-                  {/* Mobile User Profile */}
-                  <div className="px-3 py-2">
-                    <UserProfileMenu />
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
+                <Button variant="destructive" onClick={handleResetProgress}>
+                  Reset
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </header>
   );
-};
-
-export default Header;
+}

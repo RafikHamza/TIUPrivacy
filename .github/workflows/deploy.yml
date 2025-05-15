@@ -1,46 +1,51 @@
 name: Deploy to GitHub Pages
 
-# Triggers the workflow on push events to the main branch
 on:
   push:
-    branches: [ main ] # Ensure this matches your default branch (e.g., main or master)
+    branches: [ main ]
+  workflow_dispatch:
 
-# Sets permissions for the GitHub token to allow deployment to GitHub Pages
 permissions:
-  contents: write # Allows the action to push to the gh-pages branch
-  pages: write    # Allows the action to deploy to GitHub Pages (if using GitHub Actions as source directly, good to have)
-  id-token: write # Required for certain deployment methods (good to have for future-proofing)
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
-    name: Build and Deploy
-    runs-on: ubuntu-latest # Specifies the runner environment
-
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4 # Checks out your repository's code
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Node
+        uses: actions/setup-node@v3
         with:
-          node-version: '20' # Specifies Node.js version 20.x
-          cache: 'npm' # Enables caching for npm dependencies to speed up future builds
+          node-version: 18
+          cache: 'npm'
 
       - name: Install dependencies
-        # 'npm ci' is generally recommended for CI/CD for faster, more reliable installs.
-        # It uses your package-lock.json file and ensures a clean slate.
         run: npm ci
 
-      - name: Build application
-        # This runs the GitHub Pages specific build script
+      - name: Build
         run: npm run build:gh-pages
 
-      - name: Prepare 404 page for SPA fallback
-        # This copies your main index.html to 404.html for SPA routing
-        run: cp dist/index.html dist/404.html
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: './dist'
 
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages # The branch the action should deploy to.
-          folder: dist # This folder contains the built website
+        id: deployment
+        uses: actions/deploy-pages@v2
